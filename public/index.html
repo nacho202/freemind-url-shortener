@@ -15,273 +15,26 @@
         </header>
 
         <main>
-            <!-- Sistema de pestañas -->
-            <div class="tabs-container">
-                <div class="tabs">
-                    <button class="tab-button active" data-tab="create">
-                        <i class="fas fa-plus"></i>
+            <div class="shorten-container">
+                <form id="form">
+                    <div class="form-group">
+                        <label for="slug">Slug personalizado</label>
+                        <input id="slug" placeholder="mi-slug-personalizado" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="url">URL de destino</label>
+                        <input id="url" placeholder="https://destino..." required />
+                    </div>
+                    <div class="form-group">
+                        <label for="ttl">TTL en segundos (opcional)</label>
+                        <input id="ttl" placeholder="3600" />
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-magic"></i>
                         Crear
                     </button>
-                    <button class="tab-button" data-tab="history">
-                        <i class="fas fa-history"></i>
-                        Historial
-                    </button>
-                </div>
-            </div>
-
-            <!-- Pestaña Crear -->
-            <div id="createTab" class="tab-content active">
-                <div class="url-form-container">
-                    <form id="urlForm" class="url-form">
-                        <div class="input-group">
-                            <input 
-                                type="url" 
-                                id="urlInput" 
-                                placeholder="Ingresa tu URL aquí..." 
-                                required
-                            >
-                            <button type="submit" id="shortenBtn">
-                                <i class="fas fa-compress-alt"></i>
-                                Acortar
-                            </button>
-                        </div>
-                        
-                        <div class="custom-code-section">
-                            <label for="customCodeInput">
-                                <i class="fas fa-edit"></i>
-                                Código personalizado (opcional):
-                            </label>
-                            <div class="custom-code-input">
-                                <span class="domain-prefix">localhost/</span>
-                                <input 
-                                    type="text" 
-                                    id="customCodeInput" 
-                                    placeholder="ejemplo-link"
-                                    maxlength="20"
-                                >
-                            </div>
-                            <small class="help-text">
-                                Solo letras, números y guiones. 3-20 caracteres.
-                            </small>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Pestaña Historial -->
-            <div id="historyTab" class="tab-content">
-                <div class="history-container">
-                    <div class="history-header">
-                        <h3><i class="fas fa-history"></i> Historial de URLs</h3>
-                        <button id="refreshHistoryBtn" class="btn-refresh">
-                            <i class="fas fa-sync-alt"></i>
-                            Actualizar
-                        </button>
-                    </div>
-                    
-                    <div id="historyContent" class="history-content">
-                        <div class="loading-history">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <p>Cargando historial...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="resultContainer" class="result-container hidden">
-                <div class="result-card">
-                    <h3><i class="fas fa-check-circle"></i> ¡URL Acortada!</h3>
-                    <div class="result-content">
-                        <div class="url-display">
-                            <label>URL Original:</label>
-                            <div class="url-box original">
-                                <span id="originalUrl"></span>
-                                <button class="copy-btn" onclick="copyToClipboard('originalUrl')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="url-display">
-                            <label>URL Acortada:</label>
-                            <div class="url-box shortened">
-                                <span id="shortUrl"></span>
-                                <button class="copy-btn" onclick="copyToClipboard('shortUrl')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="result-actions">
-                        <button class="btn-secondary" onclick="getStats()">
-                            <i class="fas fa-chart-bar"></i>
-                            Ver Estadísticas
-                        </button>
-                        <button class="btn-primary" onclick="shortenAnother()">
-                            <i class="fas fa-plus"></i>
-                            Acortar Otra
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="statsContainer" class="stats-container hidden">
-                <div class="stats-card">
-                    <h3><i class="fas fa-chart-bar"></i> Estadísticas</h3>
-                    <div class="stats-content">
-                        <div class="stat-item">
-                            <i class="fas fa-mouse-pointer"></i>
-                            <span>Clicks: <strong id="clickCount">0</strong></span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>Creado: <strong id="createdDate">-</strong></span>
-                        </div>
-                    </div>
-                    <button class="btn-secondary" onclick="hideStats()">
-                        <i class="fas fa-times"></i>
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-
-            <div id="loadingContainer" class="loading-container hidden">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Acortando URL...</p>
-                </div>
-            </div>
-
-            <div id="errorContainer" class="error-container hidden">
-                <div class="error-card">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p id="errorMessage"></p>
-                    <button class="btn-secondary" onclick="hideError()">
-                        <i class="fas fa-times"></i>
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-
-            <!-- Modal para editar URL -->
-            <div id="editUrlModal" class="modal hidden">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3><i class="fas fa-edit"></i> Editar URL Original</h3>
-                        <button class="modal-close" onclick="closeEditUrlModal()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editUrlForm">
-                            <div class="form-group">
-                                <label for="editUrlInput">Nueva URL:</label>
-                                <input 
-                                    type="url" 
-                                    id="editUrlInput" 
-                                    placeholder="Ingresa la nueva URL..." 
-                                    required
-                                >
-                            </div>
-                            <div class="modal-actions">
-                                <button type="button" class="btn-secondary" onclick="closeEditUrlModal()">
-                                    <i class="fas fa-times"></i>
-                                    Cancelar
-                                </button>
-                                <button type="submit" class="btn-primary">
-                                    <i class="fas fa-save"></i>
-                                    Guardar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal para editar código -->
-            <div id="editCodeModal" class="modal hidden">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3><i class="fas fa-tag"></i> Editar Código Personalizado</h3>
-                        <button class="modal-close" onclick="closeEditCodeModal()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editCodeForm">
-                            <div class="form-group">
-                                <label for="editCodeInput">Nuevo código:</label>
-                                <div class="custom-code-input">
-                                    <span class="domain-prefix">localhost/</span>
-                                    <input 
-                                        type="text" 
-                                        id="editCodeInput" 
-                                        placeholder="nuevo-codigo"
-                                        maxlength="20"
-                                        required
-                                    >
-                                </div>
-                                <small class="help-text">
-                                    Solo letras, números y guiones. 3-20 caracteres.
-                                </small>
-                            </div>
-                            <div class="modal-actions">
-                                <button type="button" class="btn-secondary" onclick="closeEditCodeModal()">
-                                    <i class="fas fa-times"></i>
-                                    Cancelar
-                                </button>
-                                <button type="submit" class="btn-primary">
-                                    <i class="fas fa-save"></i>
-                                    Guardar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal de estadísticas detalladas -->
-            <div id="detailedStatsModal" class="modal hidden">
-                <div class="modal-content stats-modal">
-                    <div class="modal-header">
-                        <h3><i class="fas fa-chart-line"></i> Estadísticas Detalladas</h3>
-                        <button class="modal-close" onclick="closeDetailedStatsModal()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="statsLoading" class="stats-loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <p>Cargando estadísticas...</p>
-                        </div>
-                        
-                        <div id="statsContent" class="stats-content hidden">
-                            <!-- Información básica -->
-                            <div class="stats-section">
-                                <h4><i class="fas fa-info-circle"></i> Información General</h4>
-                                <div class="stats-grid">
-                                    <div class="stat-card">
-                                        <i class="fas fa-calendar"></i>
-                                        <div>
-                                            <span class="stat-label">Creado</span>
-                                            <span class="stat-value" id="statsCreatedAt"></span>
-                                        </div>
-                                    </div>
-                                    <div class="stat-card">
-                                        <i class="fas fa-mouse-pointer"></i>
-                                        <div>
-                                            <span class="stat-label">Total Clicks</span>
-                                            <span class="stat-value" id="statsTotalClicks"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-                        </div>
-                    </div>
-                </div>
+                </form>
+                <pre id="out"></pre>
             </div>
         </main>
 
@@ -290,6 +43,31 @@
         </footer>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const out = document.getElementById('out');
+        document.getElementById('form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const slug = document.getElementById('slug').value.trim();
+            const url  = document.getElementById('url').value.trim();
+            const ttl  = document.getElementById('ttl').value.trim();
+            out.textContent = 'Creando...';
+            const res = await fetch('/api/links', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // si usás ADMIN_TOKEN, descomenta la siguiente línea y poné el token:
+                    // 'Authorization': 'Bearer TU_ADMIN_TOKEN'
+                },
+                body: JSON.stringify({ slug, url, ttl: ttl ? Number(ttl) : undefined })
+            });
+            const text = await res.text();
+            try {
+                const json = JSON.parse(text);
+                out.textContent = json.ok ? `✅ ${location.origin}/${slug}` : text;
+            } catch {
+                out.textContent = res.ok ? `✅ ${location.origin}/${slug}` : `⚠️ ${res.status}: ${text}`;
+            }
+        });
+    </script>
 </body>
 </html>

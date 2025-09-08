@@ -1,17 +1,17 @@
 # 🔗 Freemind Union - Acortador de URLs
 
-Un acortador de URLs moderno y elegante desarrollado para Freemind Union, con diseño emocional y funcionalidades completas.
+Un acortador de URLs moderno y elegante desarrollado para Freemind Union, usando Vercel Edge Functions y Upstash Redis.
 
 ## ✨ Características
 
 - 🎨 **Diseño emocional** con colores de Freemind Union
 - 🔗 **Acortar URLs** largas de forma rápida
-- 🏷️ **Códigos personalizados** para URLs memorables
-- 📊 **Estadísticas básicas** de clicks
-- ✏️ **Editar URLs** y códigos existentes
-- 🗑️ **Eliminar URLs** del historial
+- 🏷️ **Slugs personalizados** para URLs memorables
+- ⚡ **Edge Functions** para máximo rendimiento
+- 🗄️ **Upstash Redis** para almacenamiento persistente
+- ⏰ **TTL opcional** para URLs temporales
 - 📱 **Diseño responsivo** para móviles y desktop
-- 📋 **Historial completo** de URLs creadas
+- 🔒 **Autenticación opcional** con token de administración
 
 ## 🚀 Despliegue en Vercel
 
@@ -60,11 +60,11 @@ freemind-url-shortener/
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Backend**: Node.js + Express
-- **Base de datos**: SQLite
+- **Backend**: Vercel Edge Functions
+- **Base de datos**: Upstash Redis
 - **Frontend**: HTML5 + CSS3 + JavaScript Vanilla
 - **Despliegue**: Vercel
-- **ID único**: nanoid
+- **Runtime**: Edge Runtime (máximo rendimiento)
 
 ## 🎨 Diseño
 
@@ -76,42 +76,38 @@ El diseño está inspirado en la filosofía de Freemind Union:
 
 ## 📖 Uso
 
-### Acortar una URL
-1. Ingresa la URL larga en el campo
-2. Opcionalmente, agrega un código personalizado
-3. Haz clic en "Acortar URL"
-4. Copia la URL corta generada
+### Crear un enlace corto
+1. Ingresa un slug personalizado (ej: "mi-enlace")
+2. Ingresa la URL de destino
+3. Opcionalmente, agrega un TTL en segundos
+4. Haz clic en "Crear"
+5. Copia la URL corta generada
 
-### Ver estadísticas
-1. Ve a la pestaña "Historial"
-2. Haz clic en "Ver Stats" en cualquier URL
-3. Ve las estadísticas básicas
+### Acceder a un enlace
+- Simplemente visita `https://tudominio.com/slug` y serás redirigido automáticamente
 
-### Editar o eliminar
-1. En el historial, usa los botones correspondientes
-2. Edita la URL original o el código
-3. Elimina URLs que ya no necesites
+### Configuración de Upstash Redis
+1. Crea una cuenta en [Upstash](https://upstash.com)
+2. Crea una base de datos Redis
+3. Copia las credenciales a las variables de entorno de Vercel
 
 ## 🔧 Configuración
 
 ### Variables de entorno
-- `NODE_ENV`: Entorno de ejecución (production/development)
-- `PORT`: Puerto del servidor (por defecto: 3000)
+- `UPSTASH_REDIS_REST_URL`: URL de tu base de datos Redis de Upstash
+- `UPSTASH_REDIS_REST_TOKEN`: Token de autenticación de Upstash
+- `ADMIN_TOKEN`: Token opcional para autenticación (opcional)
 
 ### Base de datos
-- Se crea automáticamente `urls.db` en la primera ejecución
-- Contiene tabla `urls` con información de URLs acortadas
+- Usa Upstash Redis para almacenamiento persistente
+- Los enlaces se almacenan con la clave `link:slug`
+- Soporte para TTL (Time To Live) opcional
 
 ## 📝 API Endpoints
 
-- `POST /api/shorten` - Acortar URL
-- `GET /api/stats/:code` - Estadísticas básicas
-- `GET /api/detailed-stats/:code` - Estadísticas detalladas
-- `GET /api/history` - Historial de URLs
-- `PUT /api/edit-url/:code` - Editar URL original
-- `PUT /api/edit-code/:code` - Editar código corto
-- `DELETE /api/delete/:code` - Eliminar URL
-- `GET /:code` - Redirigir a URL original
+- `POST /api/links` - Crear enlace corto
+- `GET /api/redirect?slug=xxx` - Redirigir a URL original
+- `GET /:slug` - Redirigir a URL original (ruta directa)
 
 ## 🤝 Contribuir
 

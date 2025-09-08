@@ -1,36 +1,11 @@
 {
   "name": "freemind-url-shortener",
   "version": "1.0.0",
-  "description": "Acortador de URLs para Freemind Union - Ayuda a tus pequeños a crecer en emociones y ser felices",
-  "main": "server.js",
+  "private": true,
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'No build step required'",
-    "vercel-build": "echo 'Vercel build completed'"
+    "dev": "vercel dev"
   },
-  "keywords": [
-    "url-shortener",
-    "freemind-union",
-    "educacion-emocional",
-    "nodejs",
-    "express",
-    "vercel"
-  ],
-  "author": "Freemind Union",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "sqlite3": "^5.1.6",
-    "nanoid": "^3.3.4"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/freemindunion/url-shortener"
-  },
-  "homepage": "https://freemindunion.info"
+    "@upstash/redis": "^1.28.4"
+  }
 }

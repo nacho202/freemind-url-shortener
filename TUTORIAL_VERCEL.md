@@ -45,7 +45,7 @@ git commit -m "Initial commit - Freemind Union URL Shortener"
 ### 2.2 Subir código a GitHub
 ```bash
 # Conecta tu repositorio local con GitHub
-git remote add origin https://github.com/TU_USUARIO/freemind-url-shortener.git
+git remote add origin https://github.com/nacho202/freemind-url-shortener.git
 
 # Sube el código
 git branch -M main
