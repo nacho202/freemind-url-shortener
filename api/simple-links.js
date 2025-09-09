@@ -47,7 +47,7 @@ export default async function handler(req) {
   }
 
   // Validar slug
-  if (!/^[a-zA-Z0-9-_]+$/.test(finalSlug)) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(finalSlug)) {
     return new Response(JSON.stringify({ error: 'Invalid slug format' }), { 
       status: 400,
       headers: { 'content-type': 'application/json' }
