@@ -1,5 +1,17 @@
 {
   "buildCommand": "",
   "outputDirectory": ".",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "functions": {
+    "api/index.js": { "runtime": "edge" },
+    "api/links.js": { "runtime": "edge" },
+    "api/redirect.js": { "runtime": "edge" },
+    "api/styles.js": { "runtime": "edge" }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/api/index" },
+    { "source": "/api/links", "destination": "/api/links" },
+    { "source": "/styles.css", "destination": "/api/styles" },
+    { "source": "/(.*)", "destination": "/api/redirect?slug=$1" }
+  ]
 }
