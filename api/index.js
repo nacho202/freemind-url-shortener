@@ -37,15 +37,21 @@ export default async function handler(req) {
                             <i class="fas fa-magic"></i> Crear Enlace Corto
                         </button>
                     </form>
-                    <div id="result" class="result-container"></div>
+                    <div id="result" class="result-container">
+                        <button id="clearResult" class="btn-clear" style="display: none;">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Sección de Historial -->
                 <div class="history-container">
-                    <h2><i class="fas fa-history"></i> Historial de Enlaces</h2>
-                    <button id="refreshHistory" class="btn-secondary">
-                        <i class="fas fa-sync-alt"></i> Actualizar
-                    </button>
+                    <div class="history-header">
+                        <h2><i class="fas fa-history"></i> Historial de Enlaces</h2>
+                        <button id="refreshHistory" class="btn-secondary">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
                     <div id="historyList" class="history-list"></div>
                 </div>
             </main>
@@ -64,10 +70,12 @@ export default async function handler(req) {
             const resultDiv = document.getElementById('result');
             const historyList = document.getElementById('historyList');
             const refreshBtn = document.getElementById('refreshHistory');
+            const clearResultBtn = document.getElementById('clearResult');
 
             // Event Listeners
             shortenForm.addEventListener('submit', handleShorten);
             refreshBtn.addEventListener('click', loadHistory);
+            clearResultBtn.addEventListener('click', clearResult);
 
             // Cargar historial al inicio
             loadHistory();
@@ -114,14 +122,29 @@ export default async function handler(req) {
 
             // Función para mostrar resultado
             function showResult(message, type) {
-                resultDiv.innerHTML = \`<div class="result \${type}">\${message}</div>\`;
+                resultDiv.innerHTML = \`
+                    <div class="result \${type}">\${message}</div>
+                    <button id="clearResult" class="btn-clear">
+                        <i class="fas fa-times"></i> Limpiar
+                    </button>
+                \`;
                 resultDiv.style.display = 'block';
                 
-                if (type === 'success') {
+                // Agregar event listener al botón de limpiar
+                const newClearBtn = resultDiv.querySelector('#clearResult');
+                newClearBtn.addEventListener('click', clearResult);
+                
+                // Solo ocultar automáticamente los mensajes de error, no los de éxito
+                if (type === 'error') {
                     setTimeout(() => {
                         resultDiv.style.display = 'none';
                     }, 5000);
                 }
+            }
+
+            // Función para limpiar resultado
+            function clearResult() {
+                resultDiv.style.display = 'none';
             }
 
             // Función para cargar historial

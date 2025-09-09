@@ -147,9 +147,16 @@ export default async function handler(req) {
       margin-top: 30px;
     }
 
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
     .history-container h2 {
       color: var(--text-color);
-      margin-bottom: 20px;
+      margin: 0;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -163,8 +170,10 @@ export default async function handler(req) {
       border-radius: 8px;
       cursor: pointer;
       font-size: 0.9rem;
-      margin-bottom: 20px;
       transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .btn-secondary:hover {
@@ -264,6 +273,7 @@ export default async function handler(req) {
     .result-container {
       margin-top: 20px;
       display: none;
+      position: relative;
     }
 
     .result {
@@ -288,6 +298,28 @@ export default async function handler(req) {
       background: #d1ecf1;
       color: #0c5460;
       border: 1px solid #bee5eb;
+    }
+
+    .btn-clear {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #666;
+      transition: background 0.3s ease;
+    }
+
+    .btn-clear:hover {
+      background: rgba(0, 0, 0, 0.2);
     }
 
     /* Modal de estadísticas */
@@ -354,6 +386,16 @@ export default async function handler(req) {
       .history-stats {
         flex-direction: column;
         gap: 10px;
+      }
+
+      .history-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+
+      .btn-secondary {
+        align-self: flex-end;
       }
     }
   `;
