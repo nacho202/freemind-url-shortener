@@ -1,5 +1,5 @@
 // api/delete.js
-import { kv } from '@vercel/kv';
+import { deleteUrl } from './database.js';
 
 export const config = { runtime: 'edge' };
 
@@ -19,18 +19,14 @@ export default async function handler(req) {
   }
 
   try {
-    // Verificar que el enlace existe
-    const exists = await kv.get(`link:${slug}`);
-    if (!exists) {
+    const success = await deleteUrl(slug);
+    
+    if (!success) {
       return new Response(JSON.stringify({ error: 'Link not found' }), {
         status: 404,
         headers: { 'content-type': 'application/json' }
       });
     }
-
-    // Eliminar enlace y metadatos
-    await kv.del(`link:${slug}`);
-    await kv.del(`meta:${slug}`);
 
     return new Response(JSON.stringify({ ok: true, message: 'Link deleted successfully' }), {
       headers: { 'content-type': 'application/json' }

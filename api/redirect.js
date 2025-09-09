@@ -1,5 +1,5 @@
 // api/redirect.js
-import { kv } from '@vercel/kv';
+import { getDestinationUrl, incrementClicks } from './database.js';
 
 export const config = { runtime: 'edge' };
 
@@ -13,24 +13,15 @@ export default async function handler(req) {
   }
 
   try {
-    const dest = await kv.get(`link:${slug}`);
+    const dest = await getDestinationUrl(slug);
     if (typeof dest === 'string' && dest.startsWith('http')) {
       // Incrementar contador de clicks
-      try {
-        const metadata = await kv.get(`meta:${slug}`);
-        if (metadata) {
-          const meta = JSON.parse(metadata);
-          meta.clicks = (meta.clicks || 0) + 1;
-          await kv.set(`meta:${slug}`, JSON.stringify(meta));
-        }
-      } catch (metaError) {
-        console.error('Error updating clicks:', metaError);
-      }
+      await incrementClicks(slug);
       
       return Response.redirect(dest, 308);
     }
   } catch (error) {
-    console.error('Error getting from KV:', error);
+    console.error('Error getting destination URL:', error);
   }
 
   return new Response('Not found', { status: 404 });

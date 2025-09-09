@@ -1,5 +1,5 @@
 // api/links.js
-import { kv } from '@vercel/kv';
+import { saveUrl, getDestinationUrl } from './database.js';
 
 export const config = { runtime: 'edge' };
 
@@ -43,26 +43,18 @@ export default async function handler(req) {
   }
 
   try {
-    const exists = await kv.get(`link:${finalSlug}`);
-    if (exists) return new Response('Slug already exists', { status: 409 });
+    // Verificar si el slug ya existe
+    const existingUrl = await getDestinationUrl(finalSlug);
+    if (existingUrl) return new Response('Slug already exists', { status: 409 });
 
-    const opts = ttl ? { ex: Number(ttl) } : undefined;
-    await kv.set(`link:${finalSlug}`, url, opts);
-
-    // Guardar metadatos del enlace
-    const metadata = {
-      originalUrl: url,
-      slug: finalSlug,
-      createdAt: new Date().toISOString(),
-      clicks: 0
-    };
-    await kv.set(`meta:${finalSlug}`, JSON.stringify(metadata), opts);
+    // Guardar el enlace
+    const metadata = await saveUrl(finalSlug, url, ttl);
 
     return new Response(JSON.stringify({ ok: true, slug: finalSlug, url }), {
       headers: { 'content-type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error with KV:', error);
+    console.error('Error saving URL:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
 }

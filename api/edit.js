@@ -1,5 +1,5 @@
 // api/edit.js
-import { kv } from '@vercel/kv';
+import { updateUrl } from './database.js';
 
 export const config = { runtime: 'edge' };
 
@@ -47,24 +47,13 @@ export default async function handler(req) {
   }
 
   try {
-    // Verificar que el enlace existe
-    const exists = await kv.get(`link:${slug}`);
-    if (!exists) {
+    const success = await updateUrl(slug, newUrl);
+    
+    if (!success) {
       return new Response(JSON.stringify({ error: 'Link not found' }), {
         status: 404,
         headers: { 'content-type': 'application/json' }
       });
-    }
-
-    // Actualizar la URL
-    await kv.set(`link:${slug}`, newUrl);
-
-    // Actualizar metadatos
-    const metadata = await kv.get(`meta:${slug}`);
-    if (metadata) {
-      const meta = JSON.parse(metadata);
-      meta.originalUrl = newUrl;
-      await kv.set(`meta:${slug}`, JSON.stringify(meta));
     }
 
     return new Response(JSON.stringify({ ok: true, message: 'URL updated successfully' }), {

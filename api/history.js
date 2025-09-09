@@ -1,5 +1,5 @@
 // api/history.js
-import { kv } from '@vercel/kv';
+import { getHistory } from './database.js';
 
 export const config = { runtime: 'edge' };
 
@@ -9,31 +9,8 @@ export default async function handler(req) {
   }
 
   try {
-    // Obtener todas las claves de metadatos
-    const keys = await kv.keys('meta:*');
-    const history = [];
-
-    console.log('Found keys:', keys);
-
-    for (const key of keys) {
-      try {
-        const metadata = await kv.get(key);
-        console.log(`Getting metadata for ${key}:`, metadata);
-        if (metadata) {
-          const meta = JSON.parse(metadata);
-          history.push(meta);
-        }
-      } catch (error) {
-        console.error(`Error getting metadata for ${key}:`, error);
-      }
-    }
-
-    console.log('History before sort:', history);
-
-    // Ordenar por fecha de creación (más recientes primero)
-    history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    console.log('History after sort:', history);
+    const history = await getHistory();
+    console.log('Retrieved history:', history);
 
     return new Response(JSON.stringify({ ok: true, history }), {
       headers: { 'content-type': 'application/json' }

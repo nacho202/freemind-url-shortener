@@ -1,5 +1,5 @@
 // api/stats.js
-import { kv } from '@vercel/kv';
+import { getUrl } from './database.js';
 
 export const config = { runtime: 'edge' };
 
@@ -19,32 +19,21 @@ export default async function handler(req) {
   }
 
   try {
-    // Verificar que el enlace existe
-    const exists = await kv.get(`link:${slug}`);
-    if (!exists) {
+    const metadata = await getUrl(slug);
+    
+    if (!metadata) {
       return new Response(JSON.stringify({ error: 'Link not found' }), {
         status: 404,
         headers: { 'content-type': 'application/json' }
       });
     }
 
-    // Obtener metadatos
-    const metadata = await kv.get(`meta:${slug}`);
-    if (!metadata) {
-      return new Response(JSON.stringify({ error: 'Metadata not found' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json' }
-      });
-    }
-
-    const meta = JSON.parse(metadata);
-
     return new Response(JSON.stringify({
       ok: true,
-      slug: meta.slug,
-      originalUrl: meta.originalUrl,
-      totalClicks: meta.clicks || 0,
-      createdAt: meta.createdAt
+      slug: metadata.slug,
+      originalUrl: metadata.originalUrl,
+      totalClicks: metadata.clicks || 0,
+      createdAt: metadata.createdAt
     }), {
       headers: { 'content-type': 'application/json' }
     });
