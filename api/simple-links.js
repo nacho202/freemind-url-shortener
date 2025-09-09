@@ -46,9 +46,9 @@ export default async function handler(req) {
     });
   }
 
-  // Validar slug
-  if (!/^[a-zA-Z0-9_-]+$/.test(finalSlug)) {
-    return new Response(JSON.stringify({ error: 'Invalid slug format' }), { 
+  // Validar slug - solo verificar que no esté vacío y no tenga espacios
+  if (finalSlug && (finalSlug.includes(' ') || finalSlug.length === 0)) {
+    return new Response(JSON.stringify({ error: 'Slug cannot contain spaces' }), { 
       status: 400,
       headers: { 'content-type': 'application/json' }
     });

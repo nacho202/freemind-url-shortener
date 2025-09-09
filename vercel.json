@@ -4,8 +4,10 @@
   "installCommand": "npm install",
   "rewrites": [
     { "source": "/", "destination": "/api/index" },
+    { "source": "/test", "destination": "/api/test-page" },
     { "source": "/api/links", "destination": "/api/links" },
     { "source": "/api/history", "destination": "/api/history" },
+    { "source": "/api/ultra-simple", "destination": "/api/ultra-simple" },
     { "source": "/api/simple-links", "destination": "/api/simple-links" },
     { "source": "/api/simple-history", "destination": "/api/simple-history" },
     { "source": "/api/edit/(.*)", "destination": "/api/edit/$1" },

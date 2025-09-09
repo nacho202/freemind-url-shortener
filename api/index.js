@@ -30,7 +30,7 @@ export default async function handler(req) {
                         </div>
                         <div class="form-group">
                             <label for="customSlug">Slug Personalizado (opcional)</label>
-                            <input type="text" id="customSlug" placeholder="mi-enlace-personalizado" pattern="[a-zA-Z0-9_-]+">
+                            <input type="text" id="customSlug" placeholder="mi-enlace-personalizado">
                             <small>Si no especificas, se generará automáticamente</small>
                         </div>
                         <button type="submit" class="btn-primary">
@@ -225,7 +225,7 @@ export default async function handler(req) {
                         <h3>Editar Enlace</h3>
                         <div class="form-group">
                             <label for="editSlug">Slug (URL corta):</label>
-                            <input type="text" id="editSlug" value="\${slug}" pattern="[a-zA-Z0-9_-]+">
+                            <input type="text" id="editSlug" value="\${slug}">
                         </div>
                         <div class="form-group">
                             <label for="editUrl">URL de destino:</label>
