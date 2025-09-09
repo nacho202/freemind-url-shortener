@@ -28,7 +28,10 @@ async function saveToRedis(slug, data) {
 async function getFromRedis(slug) {
   try {
     const { kv } = await import('@vercel/kv');
-    const data = await kv.get(`link:${slug}`);
+    const key = `link:${slug}`;
+    console.log('Getting from Redis with key:', key);
+    const data = await kv.get(key);
+    console.log('Raw data from Redis:', data);
     return data ? JSON.parse(data) : null;
   } catch (error) {
     console.warn('Redis get failed:', error.message);
@@ -215,9 +218,14 @@ async function handleAPI(req) {
   if (req.method === 'DELETE' && slug) {
     // Eliminar enlace
     try {
+      console.log('DELETE request for slug:', slug);
+      
       // Verificar si existe en Redis
       const linkData = await getFromRedis(slug);
+      console.log('Link data from Redis:', linkData);
+      
       if (!linkData) {
+        console.log('Link not found in Redis for slug:', slug);
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
           headers: { 'content-type': 'application/json' }
