@@ -192,6 +192,40 @@ export default async function handler(req) {
             justify-content: space-between;
             font-size: 12px;
             color: #666;
+            margin-bottom: 10px;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-edit {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #0056b3;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
         }
 
         .no-data {
@@ -331,11 +365,23 @@ export default async function handler(req) {
                     } else {
                         historyList.innerHTML = data.history.map(item => \`
                             <div class="history-item">
-                                <div class="history-url">\${item.slug}</div>
+                                <div class="history-url">
+                                    <a href="\${window.location.origin}/\${item.slug}" target="_blank">
+                                        \${window.location.origin}/\${item.slug}
+                                    </a>
+                                </div>
                                 <div class="history-original">\${item.url}</div>
                                 <div class="history-stats">
                                     <span><i class="fas fa-mouse-pointer"></i> \${item.clicks || 0} clicks</span>
                                     <span><i class="fas fa-calendar"></i> \${new Date(item.createdAt).toLocaleString()}</span>
+                                </div>
+                                <div class="history-actions">
+                                    <button onclick="editLink('\${item.slug}', '\${item.url}')" class="btn-edit">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                    <button onclick="deleteLink('\${item.slug}')" class="btn-delete">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
                                 </div>
                             </div>
                         \`).join('');
@@ -350,6 +396,55 @@ export default async function handler(req) {
 
         // Función para actualizar historial
         document.getElementById('refreshHistory').addEventListener('click', loadHistory);
+
+        // Función para editar enlace
+        async function editLink(slug, currentUrl) {
+            const newUrl = prompt('Ingresa la nueva URL de destino:', currentUrl);
+            if (!newUrl || newUrl === currentUrl) return;
+
+            try {
+                const response = await fetch(\`/api/ultra-simple/\${slug}\`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: newUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('✅ Enlace actualizado correctamente', 'success');
+                    loadHistory();
+                } else {
+                    showResult(\`❌ Error: \${data.error}\`, 'error');
+                }
+            } catch (error) {
+                showResult(\`❌ Error de conexión: \${error.message}\`, 'error');
+            }
+        }
+
+        // Función para eliminar enlace
+        async function deleteLink(slug) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este enlace?')) return;
+
+            try {
+                const response = await fetch(\`/api/ultra-simple/\${slug}\`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('✅ Enlace eliminado correctamente', 'success');
+                    loadHistory();
+                } else {
+                    showResult(\`❌ Error: \${data.error}\`, 'error');
+                }
+            } catch (error) {
+                showResult(\`❌ Error de conexión: \${error.message}\`, 'error');
+            }
+        }
 
         // Cargar historial al inicio
         loadHistory();

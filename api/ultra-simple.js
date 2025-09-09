@@ -5,13 +5,22 @@ export const config = { runtime: 'edge' };
 let ultraDb = new Map();
 
 // Función para sincronizar con redirect handler
-function syncWithRedirect(slug, url) {
+async function syncWithRedirect(slug, url) {
   try {
     // Intentar acceder a la base de datos de redirección
     const redirectDb = global.redirectDb || new Map();
     redirectDb.set(slug, url);
     global.redirectDb = redirectDb;
     console.log('Synced with redirect DB:', slug, '->', url);
+    
+    // También intentar guardar en Vercel KV para persistencia
+    try {
+      const { kv } = await import('@vercel/kv');
+      await kv.set(`link:${slug}`, url);
+      console.log('Saved to KV for redirect:', slug, '->', url);
+    } catch (kvError) {
+      console.warn('KV sync failed:', kvError.message);
+    }
   } catch (error) {
     console.warn('Failed to sync with redirect DB:', error.message);
   }
@@ -19,6 +28,10 @@ function syncWithRedirect(slug, url) {
 
 export default async function handler(req) {
   console.log('Ultra simple handler called with method:', req.method);
+  
+  // Extraer slug de la URL si es PUT o DELETE
+  const url = new URL(req.url);
+  const slug = url.pathname.split('/').pop();
   
   if (req.method === 'POST') {
     // Crear enlace
@@ -55,7 +68,7 @@ export default async function handler(req) {
       console.log('Saved to ultra DB:', finalSlug, '->', url);
       
       // Sincronizar con el sistema de redirección
-      syncWithRedirect(finalSlug, url);
+      await syncWithRedirect(finalSlug, url);
       
       return new Response(JSON.stringify({ 
         ok: true, 
@@ -92,6 +105,96 @@ export default async function handler(req) {
       
     } catch (error) {
       console.error('Error in ultra simple GET:', error);
+      return new Response(JSON.stringify({ error: 'Server error', details: error.message }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' }
+      });
+    }
+  }
+  
+  if (req.method === 'PUT') {
+    // Actualizar enlace
+    try {
+      const body = await req.json();
+      const { url: newUrl } = body;
+      
+      if (!newUrl) {
+        return new Response(JSON.stringify({ error: 'URL is required' }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      
+      if (!ultraDb.has(slug)) {
+        return new Response(JSON.stringify({ error: 'Link not found' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      
+      // Actualizar en la base de datos
+      const metadata = ultraDb.get(slug);
+      metadata.url = newUrl;
+      ultraDb.set(slug, metadata);
+      
+      // Sincronizar con el sistema de redirección
+      await syncWithRedirect(slug, newUrl);
+      
+      console.log('Updated link:', slug, '->', newUrl);
+      
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        message: 'Link updated successfully' 
+      }), {
+        headers: { 'content-type': 'application/json' }
+      });
+      
+    } catch (error) {
+      console.error('Error in ultra simple PUT:', error);
+      return new Response(JSON.stringify({ error: 'Server error', details: error.message }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' }
+      });
+    }
+  }
+  
+  if (req.method === 'DELETE') {
+    // Eliminar enlace
+    try {
+      if (!ultraDb.has(slug)) {
+        return new Response(JSON.stringify({ error: 'Link not found' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      
+      // Eliminar de la base de datos
+      ultraDb.delete(slug);
+      
+      // Eliminar del sistema de redirección
+      try {
+        const redirectDb = global.redirectDb || new Map();
+        redirectDb.delete(slug);
+        global.redirectDb = redirectDb;
+        
+        // También eliminar de Vercel KV
+        const { kv } = await import('@vercel/kv');
+        await kv.del(`link:${slug}`);
+      } catch (error) {
+        console.warn('Failed to remove from redirect system:', error.message);
+      }
+      
+      console.log('Deleted link:', slug);
+      
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        message: 'Link deleted successfully' 
+      }), {
+        headers: { 'content-type': 'application/json' }
+      });
+      
+    } catch (error) {
+      console.error('Error in ultra simple DELETE:', error);
       return new Response(JSON.stringify({ error: 'Server error', details: error.message }), {
         status: 500,
         headers: { 'content-type': 'application/json' }
