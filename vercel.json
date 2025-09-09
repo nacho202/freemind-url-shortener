@@ -6,6 +6,8 @@
     { "source": "/", "destination": "/api/index" },
     { "source": "/api/links", "destination": "/api/links" },
     { "source": "/api/history", "destination": "/api/history" },
+    { "source": "/api/simple-links", "destination": "/api/simple-links" },
+    { "source": "/api/simple-history", "destination": "/api/simple-history" },
     { "source": "/api/edit/(.*)", "destination": "/api/edit/$1" },
     { "source": "/api/update/(.*)", "destination": "/api/update/$1" },
     { "source": "/api/stats/(.*)", "destination": "/api/stats/$1" },

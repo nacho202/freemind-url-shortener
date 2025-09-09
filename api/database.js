@@ -51,11 +51,15 @@ export async function saveUrl(slug, originalUrl, ttl = null) {
     db.set(slug, metadata);
     console.log(`Saved to memory: ${slug} -> ${originalUrl}`);
 
-    // Guardar en Vercel KV para redirecciones rápidas
-    const opts = ttl ? { ex: Number(ttl) } : undefined;
-    await kv.set(`link:${slug}`, originalUrl, opts);
-    await kv.set(`meta:${slug}`, JSON.stringify(metadata), opts);
-    console.log(`Saved to KV: ${slug} -> ${originalUrl}`);
+    // Intentar guardar en Vercel KV (opcional)
+    try {
+      const opts = ttl ? { ex: Number(ttl) } : undefined;
+      await kv.set(`link:${slug}`, originalUrl, opts);
+      await kv.set(`meta:${slug}`, JSON.stringify(metadata), opts);
+      console.log(`Saved to KV: ${slug} -> ${originalUrl}`);
+    } catch (kvError) {
+      console.warn('KV save failed, continuing with memory only:', kvError.message);
+    }
 
     return metadata;
   } catch (error) {
@@ -97,15 +101,19 @@ export async function getDestinationUrl(slug) {
     }
 
     // Si no está en memoria, intentar desde KV
-    const dest = await kv.get(`link:${slug}`);
-    if (dest) {
-      // Cargar metadata también para cachear
-      const kvMetadata = await kv.get(`meta:${slug}`);
-      if (kvMetadata) {
-        const meta = JSON.parse(kvMetadata);
-        db.set(slug, meta);
+    try {
+      const dest = await kv.get(`link:${slug}`);
+      if (dest) {
+        // Cargar metadata también para cachear
+        const kvMetadata = await kv.get(`meta:${slug}`);
+        if (kvMetadata) {
+          const meta = JSON.parse(kvMetadata);
+          db.set(slug, meta);
+        }
+        return dest;
       }
-      return dest;
+    } catch (kvError) {
+      console.warn('KV get failed:', kvError.message);
     }
 
     return null;
@@ -135,17 +143,26 @@ export async function incrementClicks(slug) {
 
 // Función para obtener historial
 export async function getHistory() {
-  const db = getDatabase();
-  
-  // Si la base de datos está vacía, inicializar desde KV
-  if (db.size === 0) {
-    await initializeDatabase();
-  }
+  try {
+    const db = getDatabase();
+    
+    // Si la base de datos está vacía, intentar inicializar desde KV
+    if (db.size === 0) {
+      try {
+        await initializeDatabase();
+      } catch (error) {
+        console.warn('Failed to initialize from KV, using memory only:', error.message);
+      }
+    }
 
-  const history = Array.from(db.values());
-  history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  console.log(`Returning history with ${history.length} entries`);
-  return history;
+    const history = Array.from(db.values());
+    history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    console.log(`Returning history with ${history.length} entries`);
+    return history;
+  } catch (error) {
+    console.error('Error getting history:', error);
+    return [];
+  }
 }
 
 // Función para actualizar URL
