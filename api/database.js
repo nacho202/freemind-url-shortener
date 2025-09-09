@@ -37,30 +37,31 @@ async function initializeDatabase() {
 
 // Función para guardar un enlace
 export async function saveUrl(slug, originalUrl, ttl = null) {
-  const db = getDatabase();
-  const metadata = {
-    slug,
-    originalUrl,
-    createdAt: new Date().toISOString(),
-    clicks: 0,
-    ttl
-  };
-
-  // Guardar en memoria
-  db.set(slug, metadata);
-  console.log(`Saved to memory: ${slug} -> ${originalUrl}`);
-
-  // Guardar en Vercel KV para redirecciones rápidas
   try {
+    const db = getDatabase();
+    const metadata = {
+      slug,
+      originalUrl,
+      createdAt: new Date().toISOString(),
+      clicks: 0,
+      ttl
+    };
+
+    // Guardar en memoria
+    db.set(slug, metadata);
+    console.log(`Saved to memory: ${slug} -> ${originalUrl}`);
+
+    // Guardar en Vercel KV para redirecciones rápidas
     const opts = ttl ? { ex: Number(ttl) } : undefined;
     await kv.set(`link:${slug}`, originalUrl, opts);
     await kv.set(`meta:${slug}`, JSON.stringify(metadata), opts);
     console.log(`Saved to KV: ${slug} -> ${originalUrl}`);
-  } catch (error) {
-    console.error('Error saving to KV:', error);
-  }
 
-  return metadata;
+    return metadata;
+  } catch (error) {
+    console.error('Error in saveUrl:', error);
+    throw error;
+  }
 }
 
 // Función para obtener un enlace
@@ -87,18 +88,31 @@ export async function getUrl(slug) {
 
 // Función para obtener la URL de destino
 export async function getDestinationUrl(slug) {
-  // Primero intentar desde KV (más rápido)
   try {
-    const dest = await kv.get(`link:${slug}`);
-    if (dest) return dest;
-  } catch (error) {
-    console.error('Error getting destination from KV:', error);
-  }
+    // Primero intentar desde memoria
+    const db = getDatabase();
+    const metadata = db.get(slug);
+    if (metadata) {
+      return metadata.originalUrl;
+    }
 
-  // Si no está en KV, intentar desde memoria
-  const db = getDatabase();
-  const metadata = db.get(slug);
-  return metadata ? metadata.originalUrl : null;
+    // Si no está en memoria, intentar desde KV
+    const dest = await kv.get(`link:${slug}`);
+    if (dest) {
+      // Cargar metadata también para cachear
+      const kvMetadata = await kv.get(`meta:${slug}`);
+      if (kvMetadata) {
+        const meta = JSON.parse(kvMetadata);
+        db.set(slug, meta);
+      }
+      return dest;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting destination URL:', error);
+    return null;
+  }
 }
 
 // Función para incrementar clicks

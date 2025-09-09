@@ -10,6 +10,7 @@
     { "source": "/api/update/(.*)", "destination": "/api/update/$1" },
     { "source": "/api/stats/(.*)", "destination": "/api/stats/$1" },
     { "source": "/api/delete/(.*)", "destination": "/api/delete/$1" },
+    { "source": "/api/test-kv", "destination": "/api/test-kv" },
     { "source": "/styles.css", "destination": "/api/styles" },
     { "source": "/(.*)", "destination": "/api/redirect?slug=$1" }
   ]
