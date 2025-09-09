@@ -1,31 +1,25 @@
-# 🚨 Solución: Error 404 NOT_FOUND
+# 🚨 Solución Final: Error de Runtime + 404
 
 ## 🔍 **Problema Identificado:**
 ```
-404: NOT_FOUND Code: NOT_FOUND ID: gru1::glgpm-1757427822458-d6a6d3f4e04e
+Build Failed
+Function Runtimes must have a valid version, for example `now-php@1.0.0`.
 ```
+
+**Causa**: La configuración de `functions` en `vercel.json` causa conflictos con el runtime.
 
 ## ✅ **Solución Aplicada:**
 
-### **1. Creado api/index.js para la página principal**
-- ✅ **Función específica** para servir la página principal
-- ✅ **HTML completo** con formulario y estilos
-- ✅ **JavaScript inline** para funcionalidad
+### **1. Eliminado configuración de functions del vercel.json**
+- ❌ **Antes**: `"functions": { "api/index.js": { "runtime": "edge" } }`
+- ✅ **Ahora**: Sin configuración de functions (auto-detección)
 
-### **2. Simplificado api/redirect.js**
-- ✅ **Solo maneja redirecciones** de slugs
-- ✅ **No maneja la ruta raíz** (ahora lo hace index.js)
-- ✅ **Más eficiente** y enfocado
-
-### **3. Actualizado vercel.json con rutas correctas**
+### **2. Mantenido rewrites para rutas**
 ```json
 {
-  "functions": {
-    "api/index.js": { "runtime": "edge" },
-    "api/links.js": { "runtime": "edge" },
-    "api/redirect.js": { "runtime": "edge" },
-    "api/styles.js": { "runtime": "edge" }
-  },
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "installCommand": "npm install",
   "rewrites": [
     { "source": "/", "destination": "/api/index" },
     { "source": "/api/links", "destination": "/api/links" },
@@ -35,19 +29,25 @@
 }
 ```
 
+### **3. Configuración de runtime en cada función**
+```javascript
+// En cada archivo api/*.js
+export const config = { runtime: 'edge' };
+```
+
 ## 🚀 **Pasos para Aplicar la Solución:**
 
 ### **Paso 1: Subir cambios (2 minutos)**
 ```bash
 git add .
-git commit -m "Fix 404 error - add index.js for homepage and update routing"
+git commit -m "Fix runtime error - remove functions config from vercel.json"
 git push origin main
 ```
 
 ### **Paso 2: Verificar en Vercel (1 minuto)**
 1. Ve a tu dashboard de Vercel
 2. Verifica que el último commit se esté desplegando
-3. El error 404 debería desaparecer
+3. El error de runtime debería desaparecer
 
 ### **Paso 3: Probar la aplicación (1 minuto)**
 1. Ve a tu dominio de Vercel
@@ -56,11 +56,10 @@ git push origin main
 
 ## 🔧 **¿Por qué esta solución funciona?**
 
-### **Separación de responsabilidades:**
-- ✅ **api/index.js** - Sirve la página principal
-- ✅ **api/redirect.js** - Solo maneja redirecciones de slugs
-- ✅ **api/links.js** - Crea enlaces cortos
-- ✅ **api/styles.js** - Sirve CSS
+### **Auto-detección de Vercel:**
+- ✅ **Sin configuración manual** - Vercel detecta automáticamente las Edge Functions
+- ✅ **Runtime en cada función** - `export const config = { runtime: 'edge' }`
+- ✅ **Menos conflictos** - Sin configuraciones manuales problemáticas
 
 ### **Rutas configuradas correctamente:**
 - ✅ **"/"** → **"/api/index"** - Página principal
@@ -95,38 +94,30 @@ curl https://tu-dominio.vercel.app/styles.css
 
 ## 🚨 **Si Sigue Fallando:**
 
-### **Opción 1: Verificar logs en Vercel**
+### **Opción 1: Eliminar vercel.json completamente**
+```bash
+rm vercel.json
+git add .
+git commit -m "Remove vercel.json - use auto-detection only"
+git push origin main
+```
+
+### **Opción 2: Verificar logs en Vercel**
 1. Ve a "Functions" en Vercel
 2. Revisa los logs de cada función
 3. Busca errores específicos
 
-### **Opción 2: Probar funciones individualmente**
-```bash
-# Probar index
-curl https://tu-dominio.vercel.app/api/index
-
-# Probar links
-curl -X POST https://tu-dominio.vercel.app/api/links \
-  -H "Content-Type: application/json" \
-  -d '{"slug": "test", "url": "https://google.com"}'
-
-# Probar styles
-curl https://tu-dominio.vercel.app/api/styles
-```
-
-### **Opción 3: Simplificar vercel.json**
-```json
-{
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "installCommand": "npm install"
-}
-```
+### **Opción 3: Recrear proyecto en Vercel**
+1. Borrar proyecto actual
+2. Crear proyecto nuevo
+3. Configurar Vercel KV
+4. Desplegar
 
 ## 🎯 **Configuraciones Alternativas:**
 
-### **Opción 1: Sin vercel.json (auto-detección)**
+### **Opción 1: Sin vercel.json (Recomendado)**
 ```bash
+# Eliminar vercel.json completamente
 rm vercel.json
 git add .
 git commit -m "Remove vercel.json - use auto-detection"
@@ -142,18 +133,9 @@ git push origin main
 }
 ```
 
-### **Opción 3: Configuración completa**
+### **Opción 3: Solo rewrites**
 ```json
 {
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "installCommand": "npm install",
-  "functions": {
-    "api/index.js": { "runtime": "edge" },
-    "api/links.js": { "runtime": "edge" },
-    "api/redirect.js": { "runtime": "edge" },
-    "api/styles.js": { "runtime": "edge" }
-  },
   "rewrites": [
     { "source": "/", "destination": "/api/index" },
     { "source": "/api/links", "destination": "/api/links" },
@@ -165,24 +147,24 @@ git push origin main
 
 ## ✅ **Checklist de Verificación:**
 
-- [ ] ✅ `api/index.js` creado
-- [ ] ✅ `api/redirect.js` simplificado
-- [ ] ✅ `vercel.json` actualizado con rutas
+- [ ] ✅ Configuración de `functions` eliminada del vercel.json
+- [ ] ✅ `export const config = { runtime: 'edge' }` en cada función
+- [ ] ✅ Rewrites configurados correctamente
 - [ ] ✅ Código subido a GitHub
 - [ ] ✅ Despliegue exitoso en Vercel
+- [ ] ✅ Error de runtime resuelto
 - [ ] ✅ Página principal funcionando
-- [ ] ✅ Formulario de creación funcionando
-- [ ] ✅ CSS cargando correctamente
-- [ ] ✅ Redirecciones funcionando
+- [ ] ✅ Funcionalidad completa operativa
 
 ## 🎉 **Resultado Esperado:**
 
 Después de aplicar la solución:
-- ✅ **Error 404 resuelto**
+- ✅ **Error de runtime resuelto**
+- ✅ **Despliegue exitoso** en Vercel
 - ✅ **Página principal** funcionando
 - ✅ **Formulario** del acortador visible
 - ✅ **CSS** cargando correctamente
-- ✅ **Funcionalidad completa** operativa
+- ✅ **Redirecciones** funcionando
 
 ## 🚀 **Próximos Pasos:**
 
@@ -194,4 +176,4 @@ Después de aplicar la solución:
 
 ---
 
-**¡Esta solución debería resolver el error 404 y mostrar tu acortador de URLs!** 🎯
+**¡Esta solución debería resolver tanto el error de runtime como el 404!** 🎯
