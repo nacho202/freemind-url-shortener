@@ -1,8 +1,60 @@
 // api/main.js - API principal simplificada y funcional
 export const config = { runtime: 'edge' };
 
-// Base de datos simple en memoria
-let db = new Map();
+// Base de datos persistente con Vercel KV
+let db = new Map(); // Cache en memoria para mejor rendimiento
+
+// Funciones para Vercel KV
+async function saveToKV(slug, data) {
+  try {
+    const { kv } = await import('@vercel/kv');
+    await kv.set(`link:${slug}`, JSON.stringify(data));
+    console.log('Saved to KV:', slug);
+  } catch (error) {
+    console.warn('KV save failed:', error.message);
+  }
+}
+
+async function getFromKV(slug) {
+  try {
+    const { kv } = await import('@vercel/kv');
+    const data = await kv.get(`link:${slug}`);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.warn('KV get failed:', error.message);
+    return null;
+  }
+}
+
+async function deleteFromKV(slug) {
+  try {
+    const { kv } = await import('@vercel/kv');
+    await kv.del(`link:${slug}`);
+    console.log('Deleted from KV:', slug);
+  } catch (error) {
+    console.warn('KV delete failed:', error.message);
+  }
+}
+
+async function getAllFromKV() {
+  try {
+    const { kv } = await import('@vercel/kv');
+    const keys = await kv.keys('link:*');
+    const links = [];
+    
+    for (const key of keys) {
+      const data = await kv.get(key);
+      if (data) {
+        links.push(JSON.parse(data));
+      }
+    }
+    
+    return links;
+  } catch (error) {
+    console.warn('KV get all failed:', error.message);
+    return [];
+  }
+}
 
 export default async function handler(req) {
   console.log('Main handler called:', req.method, req.url);
@@ -53,7 +105,9 @@ async function handleAPI(req) {
       
       const finalSlug = customSlug || Math.random().toString(36).substring(2, 8);
       
-      if (db.has(finalSlug)) {
+      // Verificar si existe en KV
+      const existingLink = await getFromKV(finalSlug);
+      if (existingLink) {
         return new Response(JSON.stringify({ error: 'Slug already exists' }), {
           status: 409,
           headers: { 'content-type': 'application/json' }
@@ -67,7 +121,9 @@ async function handleAPI(req) {
         clicks: 0
       };
       
+      // Guardar en memoria y en KV
       db.set(finalSlug, linkData);
+      await saveToKV(finalSlug, linkData);
       console.log('Created link:', finalSlug, '->', targetUrl);
       
       return new Response(JSON.stringify({
@@ -91,7 +147,8 @@ async function handleAPI(req) {
   if (req.method === 'GET') {
     // Obtener historial
     try {
-      const history = Array.from(db.values());
+      // Obtener desde KV (persistente)
+      const history = await getAllFromKV();
       history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       return new Response(JSON.stringify({
@@ -123,16 +180,19 @@ async function handleAPI(req) {
         });
       }
       
-      if (!db.has(slug)) {
+      // Obtener desde KV
+      const linkData = await getFromKV(slug);
+      if (!linkData) {
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
           headers: { 'content-type': 'application/json' }
         });
       }
       
-      const linkData = db.get(slug);
+      // Actualizar datos
       linkData.url = newUrl;
       db.set(slug, linkData);
+      await saveToKV(slug, linkData);
       
       console.log('Updated link:', slug, '->', newUrl);
       
@@ -155,14 +215,18 @@ async function handleAPI(req) {
   if (req.method === 'DELETE' && slug) {
     // Eliminar enlace
     try {
-      if (!db.has(slug)) {
+      // Verificar si existe en KV
+      const linkData = await getFromKV(slug);
+      if (!linkData) {
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
           headers: { 'content-type': 'application/json' }
         });
       }
       
+      // Eliminar de memoria y KV
       db.delete(slug);
+      await deleteFromKV(slug);
       console.log('Deleted link:', slug);
       
       return new Response(JSON.stringify({
@@ -190,10 +254,23 @@ async function handleAPI(req) {
 async function handleRedirect(slug) {
   console.log('Redirect request for slug:', slug);
   
-  if (db.has(slug)) {
-    const linkData = db.get(slug);
+  // Buscar en memoria primero (más rápido)
+  let linkData = db.get(slug);
+  
+  // Si no está en memoria, buscar en KV
+  if (!linkData) {
+    linkData = await getFromKV(slug);
+    if (linkData) {
+      // Cargar en memoria para futuras consultas
+      db.set(slug, linkData);
+    }
+  }
+  
+  if (linkData) {
+    // Incrementar clicks
     linkData.clicks = (linkData.clicks || 0) + 1;
     db.set(slug, linkData);
+    await saveToKV(slug, linkData);
     
     console.log('Redirecting', slug, 'to', linkData.url);
     return Response.redirect(linkData.url, 302);
