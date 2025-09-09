@@ -4,6 +4,19 @@ export const config = { runtime: 'edge' };
 // Base de datos ultra simple
 let ultraDb = new Map();
 
+// Función para sincronizar con redirect handler
+function syncWithRedirect(slug, url) {
+  try {
+    // Intentar acceder a la base de datos de redirección
+    const redirectDb = global.redirectDb || new Map();
+    redirectDb.set(slug, url);
+    global.redirectDb = redirectDb;
+    console.log('Synced with redirect DB:', slug, '->', url);
+  } catch (error) {
+    console.warn('Failed to sync with redirect DB:', error.message);
+  }
+}
+
 export default async function handler(req) {
   console.log('Ultra simple handler called with method:', req.method);
   
@@ -40,6 +53,9 @@ export default async function handler(req) {
       
       ultraDb.set(finalSlug, metadata);
       console.log('Saved to ultra DB:', finalSlug, '->', url);
+      
+      // Sincronizar con el sistema de redirección
+      syncWithRedirect(finalSlug, url);
       
       return new Response(JSON.stringify({ 
         ok: true, 

@@ -1,0 +1,365 @@
+// api/simple-main.js - Página principal simplificada
+export const config = { runtime: 'edge' };
+
+export default async function handler(req) {
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acortador de URLs - Freemind Union</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .history-container {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e1e5e9;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .history-url {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .history-original {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .history-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .history-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .btn-secondary {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-link"></i> Acortador de URLs</h1>
+            <p>Convierte tus enlaces largos en URLs cortas y fáciles de compartir</p>
+        </div>
+
+        <form id="urlForm">
+            <div class="form-group">
+                <label for="originalUrl">URL Original</label>
+                <input type="url" id="originalUrl" placeholder="https://ejemplo.com/url-muy-larga" required>
+            </div>
+            <div class="form-group">
+                <label for="customSlug">Slug Personalizado (opcional)</label>
+                <input type="text" id="customSlug" placeholder="mi-enlace-personalizado">
+                <small style="color: #666; font-size: 14px;">Si no especificas, se generará automáticamente</small>
+            </div>
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-magic"></i> Crear Enlace Corto
+            </button>
+        </form>
+
+        <div id="result" class="result-container">
+            <div id="resultContent"></div>
+        </div>
+
+        <div class="history-container">
+            <div class="history-header">
+                <h2><i class="fas fa-history"></i> Historial de Enlaces</h2>
+                <button id="refreshHistory" class="btn-secondary">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+            <div id="historyList" class="history-list">
+                <div class="no-data">Cargando historial...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para mostrar resultados
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultContent.innerHTML = \`<div class="result \${type}">\${message}</div>\`;
+            resultDiv.style.display = 'block';
+            
+            if (type === 'error') {
+                setTimeout(() => {
+                    resultDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Función para crear enlace
+        document.getElementById('urlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const originalUrl = document.getElementById('originalUrl').value.trim();
+            const customSlug = document.getElementById('customSlug').value.trim();
+            
+            if (!originalUrl) {
+                showResult('Por favor, ingresa una URL válida', 'error');
+                return;
+            }
+
+            showResult('Creando enlace...', 'loading');
+
+            try {
+                const response = await fetch('/api/ultra-simple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: originalUrl, slug: customSlug })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(\`
+                        ✅ Enlace creado exitosamente!<br>
+                        <strong>URL Corta:</strong> <a href="\${data.shortUrl}" target="_blank">\${data.shortUrl}</a><br>
+                        <strong>URL Original:</strong> \${data.url}
+                    \`, 'success');
+                    loadHistory();
+                } else {
+                    showResult(\`❌ Error: \${data.error}\`, 'error');
+                }
+            } catch (error) {
+                showResult(\`❌ Error de conexión: \${error.message}\`, 'error');
+            }
+        });
+
+        // Función para cargar historial
+        async function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            try {
+                const response = await fetch('/api/ultra-simple');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.history.length === 0) {
+                        historyList.innerHTML = '<div class="no-data">No hay enlaces creados aún</div>';
+                    } else {
+                        historyList.innerHTML = data.history.map(item => \`
+                            <div class="history-item">
+                                <div class="history-url">\${item.slug}</div>
+                                <div class="history-original">\${item.url}</div>
+                                <div class="history-stats">
+                                    <span><i class="fas fa-mouse-pointer"></i> \${item.clicks || 0} clicks</span>
+                                    <span><i class="fas fa-calendar"></i> \${new Date(item.createdAt).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        \`).join('');
+                    }
+                } else {
+                    historyList.innerHTML = \`<div class="result error">Error: \${data.error}</div>\`;
+                }
+            } catch (error) {
+                historyList.innerHTML = \`<div class="result error">Error de conexión: \${error.message}</div>\`;
+            }
+        }
+
+        // Función para actualizar historial
+        document.getElementById('refreshHistory').addEventListener('click', loadHistory);
+
+        // Cargar historial al inicio
+        loadHistory();
+    </script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: {
+      'content-type': 'text/html',
+    },
+  });
+}
