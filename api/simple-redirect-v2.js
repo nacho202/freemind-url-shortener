@@ -4,6 +4,20 @@ export const config = { runtime: 'edge' };
 // Base de datos simple para redirecciones (debe ser la misma que ultra-simple-v2)
 let simpleRedirectDb = new Map();
 
+// Función para obtener datos de ultra-simple-v2
+async function getUltraSimpleData(origin) {
+  try {
+    const response = await fetch(`${origin}/api/ultra-simple-v2`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.history || [];
+    }
+  } catch (error) {
+    console.warn('Failed to fetch from ultra-simple-v2:', error.message);
+  }
+  return [];
+}
+
 export default async function handler(req) {
   const u = new URL(req.url);
   const slug = u.searchParams.get('slug') || u.pathname.slice(1);
@@ -16,24 +30,18 @@ export default async function handler(req) {
   }
 
   try {
-    // Buscar en la base de datos local
+    // Buscar en la base de datos local primero
     let dest = simpleRedirectDb.get(slug);
     
     if (!dest) {
-      // Intentar desde la base de datos ultra-simple-v2
-      try {
-        const ultraResponse = await fetch(`${new URL(req.url).origin}/api/ultra-simple-v2`);
-        if (ultraResponse.ok) {
-          const ultraData = await ultraResponse.json();
-          const linkData = ultraData.history.find(item => item.slug === slug);
-          if (linkData) {
-            dest = linkData.url;
-            simpleRedirectDb.set(slug, dest); // Cachear
-            console.log('Found in ultra-simple-v2 DB:', slug, '->', dest);
-          }
-        }
-      } catch (error) {
-        console.warn('Ultra-simple-v2 lookup failed:', error.message);
+      // Si no está en cache, buscar en ultra-simple-v2
+      const history = await getUltraSimpleData(new URL(req.url).origin);
+      const linkData = history.find(item => item.slug === slug);
+      
+      if (linkData) {
+        dest = linkData.url;
+        simpleRedirectDb.set(slug, dest); // Cachear para futuras consultas
+        console.log('Found in ultra-simple-v2 DB:', slug, '->', dest);
       }
     }
 

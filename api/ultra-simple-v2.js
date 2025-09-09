@@ -4,8 +4,26 @@ export const config = { runtime: 'edge' };
 // Base de datos ultra simple
 let ultraDb = new Map();
 
+// Función para sincronizar con redirect handler
+async function syncWithRedirect(slug, url) {
+  try {
+    // Intentar acceder a la base de datos de redirección
+    const redirectDb = global.redirectDb || new Map();
+    redirectDb.set(slug, url);
+    global.redirectDb = redirectDb;
+    console.log('Synced with redirect DB:', slug, '->', url);
+  } catch (error) {
+    console.warn('Failed to sync with redirect DB:', error.message);
+  }
+}
+
 export default async function handler(req) {
   console.log('Ultra simple v2 handler called with method:', req.method);
+  
+  // Extraer slug de la URL si es PUT o DELETE
+  const requestUrl = new URL(req.url);
+  const pathParts = requestUrl.pathname.split('/');
+  const urlSlug = pathParts[pathParts.length - 1];
   
   if (req.method === 'POST') {
     // Crear enlace
@@ -40,6 +58,9 @@ export default async function handler(req) {
       
       ultraDb.set(finalSlug, metadata);
       console.log('Saved to ultra DB v2:', finalSlug, '->', url);
+      
+      // Sincronizar con el sistema de redirección
+      await syncWithRedirect(finalSlug, url);
       
       return new Response(JSON.stringify({ 
         ok: true, 
@@ -76,6 +97,92 @@ export default async function handler(req) {
       
     } catch (error) {
       console.error('Error in ultra simple v2 GET:', error);
+      return new Response(JSON.stringify({ error: 'Server error', details: error.message }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' }
+      });
+    }
+  }
+  
+  if (req.method === 'PUT') {
+    // Actualizar enlace
+    try {
+      const body = await req.json();
+      const { url: newUrl } = body;
+      
+      if (!newUrl) {
+        return new Response(JSON.stringify({ error: 'URL is required' }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      
+      if (!ultraDb.has(urlSlug)) {
+        return new Response(JSON.stringify({ error: 'Link not found' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      
+      // Actualizar en la base de datos
+      const metadata = ultraDb.get(urlSlug);
+      metadata.url = newUrl;
+      ultraDb.set(urlSlug, metadata);
+      
+      // Sincronizar con el sistema de redirección
+      await syncWithRedirect(urlSlug, newUrl);
+      
+      console.log('Updated link:', urlSlug, '->', newUrl);
+      
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        message: 'Link updated successfully' 
+      }), {
+        headers: { 'content-type': 'application/json' }
+      });
+      
+    } catch (error) {
+      console.error('Error in ultra simple v2 PUT:', error);
+      return new Response(JSON.stringify({ error: 'Server error', details: error.message }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' }
+      });
+    }
+  }
+  
+  if (req.method === 'DELETE') {
+    // Eliminar enlace
+    try {
+      if (!ultraDb.has(urlSlug)) {
+        return new Response(JSON.stringify({ error: 'Link not found' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      
+      // Eliminar de la base de datos
+      ultraDb.delete(urlSlug);
+      
+      // Eliminar del sistema de redirección
+      try {
+        const redirectDb = global.redirectDb || new Map();
+        redirectDb.delete(urlSlug);
+        global.redirectDb = redirectDb;
+      } catch (error) {
+        console.warn('Failed to remove from redirect system:', error.message);
+      }
+      
+      console.log('Deleted link:', urlSlug);
+      
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        message: 'Link deleted successfully' 
+      }), {
+        headers: { 'content-type': 'application/json' }
+      });
+      
+    } catch (error) {
+      console.error('Error in ultra simple v2 DELETE:', error);
       return new Response(JSON.stringify({ error: 'Server error', details: error.message }), {
         status: 500,
         headers: { 'content-type': 'application/json' }

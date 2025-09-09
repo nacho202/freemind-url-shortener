@@ -9,7 +9,7 @@
     { "source": "/api/links", "destination": "/api/links" },
     { "source": "/api/history", "destination": "/api/history" },
     { "source": "/api/ultra-simple", "destination": "/api/ultra-simple-v2" },
-    { "source": "/api/edit-simple/(.*)", "destination": "/api/edit-simple/$1" },
+    { "source": "/api/edit-simple/(.*)", "destination": "/api/ultra-simple-v2/$1" },
     { "source": "/api/delete-simple/(.*)", "destination": "/api/delete-simple/$1" },
     { "source": "/api/simple-links", "destination": "/api/simple-links" },
     { "source": "/api/simple-history", "destination": "/api/simple-history" },

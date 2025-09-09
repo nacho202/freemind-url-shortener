@@ -19,34 +19,20 @@ export default async function handler(req) {
   console.log('Delete simple handler called with slug:', slug);
 
   try {
-    // Obtener datos de la API ultra-simple
-    const ultraResponse = await fetch(`${new URL(req.url).origin}/api/ultra-simple`);
-    if (!ultraResponse.ok) {
-      return new Response(JSON.stringify({ error: 'Could not fetch links' }), {
-        status: 500,
+    // Eliminar directamente de ultra-simple-v2 usando DELETE
+    const deleteResponse = await fetch(`${new URL(req.url).origin}/api/ultra-simple-v2/${slug}`, {
+      method: 'DELETE'
+    });
+
+    if (!deleteResponse.ok) {
+      const errorData = await deleteResponse.json();
+      return new Response(JSON.stringify({ error: errorData.error || 'Could not delete link' }), {
+        status: deleteResponse.status,
         headers: { 'content-type': 'application/json' }
       });
     }
 
-    const ultraData = await ultraResponse.json();
-    const linkExists = ultraData.history.some(item => item.slug === slug);
-
-    if (!linkExists) {
-      return new Response(JSON.stringify({ error: 'Link not found' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json' }
-      });
-    }
-
-    // Eliminar de Vercel KV
-    try {
-      const { kv } = await import('@vercel/kv');
-      await kv.del(`link:${slug}`);
-      await kv.del(`meta:${slug}`);
-    } catch (error) {
-      console.warn('Failed to delete from KV:', error.message);
-    }
-
+    const deleteData = await deleteResponse.json();
     console.log('Deleted link:', slug);
 
     return new Response(JSON.stringify({ 
