@@ -1,6 +1,7 @@
 // api/redirect.js
-export const config = { runtime: 'edge' };
 import { kv } from '@vercel/kv';
+
+export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
   const u = new URL(req.url);
