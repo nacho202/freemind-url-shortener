@@ -269,6 +269,11 @@ export default async function handler(req) {
       color: white;
     }
 
+    .btn-action.copy {
+      background: var(--accent-color);
+      color: white;
+    }
+
     /* Resultados */
     .result-container {
       margin-top: 20px;
@@ -362,6 +367,42 @@ export default async function handler(req) {
       padding: 40px;
     }
 
+    /* Modal de edición */
+    .edit-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .edit-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow-hover);
+    }
+
+    .edit-content h3 {
+      color: var(--text-color);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 15px;
@@ -396,6 +437,14 @@ export default async function handler(req) {
 
       .btn-secondary {
         align-self: flex-end;
+      }
+
+      .edit-actions {
+        flex-direction: column;
+      }
+
+      .edit-content {
+        padding: 20px;
       }
     }
   `;

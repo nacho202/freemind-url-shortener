@@ -7,6 +7,7 @@
     { "source": "/api/links", "destination": "/api/links" },
     { "source": "/api/history", "destination": "/api/history" },
     { "source": "/api/edit/(.*)", "destination": "/api/edit/$1" },
+    { "source": "/api/update/(.*)", "destination": "/api/update/$1" },
     { "source": "/api/stats/(.*)", "destination": "/api/stats/$1" },
     { "source": "/api/delete/(.*)", "destination": "/api/delete/$1" },
     { "source": "/styles.css", "destination": "/api/styles" },

@@ -3,21 +3,33 @@ import { kv } from '@vercel/kv';
 
 export const config = { runtime: 'edge' };
 
-// Simulamos una base de datos en memoria (en producción usarías una DB real)
+// Base de datos en memoria global
 let urlDatabase = new Map();
+
+// Función para obtener la instancia global de la base de datos
+function getDatabase() {
+  if (!global.urlDatabase) {
+    global.urlDatabase = new Map();
+  }
+  return global.urlDatabase;
+}
 
 // Función para inicializar la base de datos desde Vercel KV
 async function initializeDatabase() {
   try {
+    const db = getDatabase();
     const keys = await kv.keys('meta:*');
+    console.log('Found KV keys:', keys);
+    
     for (const key of keys) {
       const metadata = await kv.get(key);
       if (metadata) {
         const meta = JSON.parse(metadata);
-        urlDatabase.set(meta.slug, meta);
+        db.set(meta.slug, meta);
+        console.log(`Loaded from KV: ${meta.slug} -> ${meta.originalUrl}`);
       }
     }
-    console.log(`Initialized database with ${urlDatabase.size} entries`);
+    console.log(`Initialized database with ${db.size} entries`);
   } catch (error) {
     console.error('Error initializing database:', error);
   }
@@ -25,6 +37,7 @@ async function initializeDatabase() {
 
 // Función para guardar un enlace
 export async function saveUrl(slug, originalUrl, ttl = null) {
+  const db = getDatabase();
   const metadata = {
     slug,
     originalUrl,
@@ -34,13 +47,15 @@ export async function saveUrl(slug, originalUrl, ttl = null) {
   };
 
   // Guardar en memoria
-  urlDatabase.set(slug, metadata);
+  db.set(slug, metadata);
+  console.log(`Saved to memory: ${slug} -> ${originalUrl}`);
 
   // Guardar en Vercel KV para redirecciones rápidas
   try {
     const opts = ttl ? { ex: Number(ttl) } : undefined;
     await kv.set(`link:${slug}`, originalUrl, opts);
     await kv.set(`meta:${slug}`, JSON.stringify(metadata), opts);
+    console.log(`Saved to KV: ${slug} -> ${originalUrl}`);
   } catch (error) {
     console.error('Error saving to KV:', error);
   }
@@ -50,8 +65,9 @@ export async function saveUrl(slug, originalUrl, ttl = null) {
 
 // Función para obtener un enlace
 export async function getUrl(slug) {
+  const db = getDatabase();
   // Primero intentar desde memoria
-  let metadata = urlDatabase.get(slug);
+  let metadata = db.get(slug);
   
   if (!metadata) {
     // Si no está en memoria, intentar desde KV
@@ -59,7 +75,7 @@ export async function getUrl(slug) {
       const kvData = await kv.get(`meta:${slug}`);
       if (kvData) {
         metadata = JSON.parse(kvData);
-        urlDatabase.set(slug, metadata); // Guardar en memoria
+        db.set(slug, metadata); // Guardar en memoria
       }
     } catch (error) {
       console.error('Error getting from KV:', error);
@@ -80,17 +96,19 @@ export async function getDestinationUrl(slug) {
   }
 
   // Si no está en KV, intentar desde memoria
-  const metadata = urlDatabase.get(slug);
+  const db = getDatabase();
+  const metadata = db.get(slug);
   return metadata ? metadata.originalUrl : null;
 }
 
 // Función para incrementar clicks
 export async function incrementClicks(slug) {
-  let metadata = urlDatabase.get(slug);
+  const db = getDatabase();
+  let metadata = db.get(slug);
   
   if (metadata) {
     metadata.clicks = (metadata.clicks || 0) + 1;
-    urlDatabase.set(slug, metadata);
+    db.set(slug, metadata);
     
     // Actualizar en KV también
     try {
@@ -103,23 +121,27 @@ export async function incrementClicks(slug) {
 
 // Función para obtener historial
 export async function getHistory() {
+  const db = getDatabase();
+  
   // Si la base de datos está vacía, inicializar desde KV
-  if (urlDatabase.size === 0) {
+  if (db.size === 0) {
     await initializeDatabase();
   }
 
-  const history = Array.from(urlDatabase.values());
+  const history = Array.from(db.values());
   history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  console.log(`Returning history with ${history.length} entries`);
   return history;
 }
 
 // Función para actualizar URL
 export async function updateUrl(slug, newUrl) {
-  let metadata = urlDatabase.get(slug);
+  const db = getDatabase();
+  let metadata = db.get(slug);
   
   if (metadata) {
     metadata.originalUrl = newUrl;
-    urlDatabase.set(slug, metadata);
+    db.set(slug, metadata);
     
     // Actualizar en KV también
     try {
@@ -135,12 +157,51 @@ export async function updateUrl(slug, newUrl) {
   return false;
 }
 
+// Función para actualizar slug
+export async function updateSlug(oldSlug, newSlug, newUrl) {
+  const db = getDatabase();
+  let metadata = db.get(oldSlug);
+  
+  if (metadata) {
+    // Verificar que el nuevo slug no existe
+    if (db.has(newSlug)) {
+      return { success: false, error: 'New slug already exists' };
+    }
+    
+    // Actualizar metadatos
+    metadata.slug = newSlug;
+    metadata.originalUrl = newUrl;
+    
+    // Eliminar el slug viejo
+    db.delete(oldSlug);
+    db.set(newSlug, metadata);
+    
+    // Actualizar en KV también
+    try {
+      // Eliminar datos viejos
+      await kv.del(`link:${oldSlug}`);
+      await kv.del(`meta:${oldSlug}`);
+      
+      // Crear datos nuevos
+      await kv.set(`link:${newSlug}`, newUrl);
+      await kv.set(`meta:${newSlug}`, JSON.stringify(metadata));
+    } catch (error) {
+      console.error('Error updating slug in KV:', error);
+    }
+    
+    return { success: true, metadata };
+  }
+  
+  return { success: false, error: 'Original slug not found' };
+}
+
 // Función para eliminar URL
 export async function deleteUrl(slug) {
-  const exists = urlDatabase.has(slug);
+  const db = getDatabase();
+  const exists = db.has(slug);
   
   if (exists) {
-    urlDatabase.delete(slug);
+    db.delete(slug);
     
     // Eliminar de KV también
     try {

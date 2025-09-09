@@ -184,6 +184,9 @@ export default async function handler(req) {
                             </div>
                         </div>
                         <div class="history-actions">
+                            <button onclick="copyUrl('\${item.slug}')" class="btn-action copy">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
                             <button onclick="editUrl('\${item.slug}')" class="btn-action edit">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
@@ -214,28 +217,83 @@ export default async function handler(req) {
 
             // Función para editar URL
             async function editUrl(slug) {
-                const newUrl = prompt('Ingresa la nueva URL:');
-                if (!newUrl) return;
+                // Crear modal de edición
+                const modal = document.createElement('div');
+                modal.className = 'edit-modal';
+                modal.innerHTML = \`
+                    <div class="edit-content">
+                        <h3>Editar Enlace</h3>
+                        <div class="form-group">
+                            <label for="editSlug">Slug (URL corta):</label>
+                            <input type="text" id="editSlug" value="\${slug}" pattern="[a-zA-Z0-9-_]+">
+                        </div>
+                        <div class="form-group">
+                            <label for="editUrl">URL de destino:</label>
+                            <input type="url" id="editUrl" placeholder="https://ejemplo.com">
+                        </div>
+                        <div class="edit-actions">
+                            <button onclick="closeEditModal()" class="btn-secondary">Cancelar</button>
+                            <button onclick="saveEdit('\${slug}')" class="btn-primary">Guardar</button>
+                        </div>
+                    </div>
+                \`;
+                document.body.appendChild(modal);
+            }
+
+            // Función para cerrar modal de edición
+            function closeEditModal() {
+                const modal = document.querySelector('.edit-modal');
+                if (modal) modal.remove();
+            }
+
+            // Función para guardar edición
+            async function saveEdit(oldSlug) {
+                const newSlug = document.getElementById('editSlug').value.trim();
+                const newUrl = document.getElementById('editUrl').value.trim();
+
+                if (!newSlug || !newUrl) {
+                    showResult('Por favor, completa todos los campos', 'error');
+                    return;
+                }
 
                 try {
-                    const response = await fetch(\`/api/edit/\${slug}\`, {
+                    const response = await fetch(\`/api/update/\${oldSlug}\`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ url: newUrl })
+                        body: JSON.stringify({ url: newUrl, newSlug: newSlug })
                     });
 
                     const data = await response.json();
 
                     if (response.ok) {
-                        showResult('✅ URL actualizada correctamente', 'success');
+                        showResult('✅ Enlace actualizado correctamente', 'success');
+                        closeEditModal();
                         loadHistory();
                     } else {
                         showResult(\`❌ Error: \${data.error}\`, 'error');
                     }
                 } catch (error) {
                     showResult(\`❌ Error de conexión: \${error.message}\`, 'error');
+                }
+            }
+
+            // Función para copiar URL
+            async function copyUrl(slug) {
+                const url = \`\${location.origin}/\${slug}\`;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showResult(\`✅ URL copiada: \${url}\`, 'success');
+                } catch (error) {
+                    // Fallback para navegadores que no soportan clipboard API
+                    const textArea = document.createElement('textarea');
+                    textArea.value = url;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showResult(\`✅ URL copiada: \${url}\`, 'success');
                 }
             }
 
