@@ -31,7 +31,8 @@ export default async function handler(req) {
   
   // Extraer slug de la URL si es PUT o DELETE
   const url = new URL(req.url);
-  const slug = url.pathname.split('/').pop();
+  const pathParts = url.pathname.split('/');
+  const slug = pathParts[pathParts.length - 1];
   
   if (req.method === 'POST') {
     // Crear enlace
@@ -69,6 +70,12 @@ export default async function handler(req) {
       
       // Sincronizar con el sistema de redirección
       await syncWithRedirect(finalSlug, url);
+      
+      // También guardar en la base de datos local para redirección
+      const redirectDb = global.redirectDb || new Map();
+      redirectDb.set(finalSlug, url);
+      global.redirectDb = redirectDb;
+      console.log('Saved to global redirect DB:', finalSlug, '->', url);
       
       return new Response(JSON.stringify({ 
         ok: true, 

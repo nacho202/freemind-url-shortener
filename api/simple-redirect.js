@@ -1,22 +1,14 @@
-// api/redirect.js
+// api/simple-redirect.js - Redirección simplificada
 export const config = { runtime: 'edge' };
 
 // Base de datos simple para redirecciones
-let redirectDb = new Map();
-
-// Función para obtener la base de datos global
-function getRedirectDb() {
-  if (!global.redirectDb) {
-    global.redirectDb = new Map();
-  }
-  return global.redirectDb;
-}
+let simpleRedirectDb = new Map();
 
 export default async function handler(req) {
   const u = new URL(req.url);
   const slug = u.searchParams.get('slug') || u.pathname.slice(1);
 
-  console.log('Redirect handler called with slug:', slug);
+  console.log('Simple redirect handler called with slug:', slug);
 
   // Si es un archivo estático, devolver 404
   if (slug.includes('.')) {
@@ -24,25 +16,19 @@ export default async function handler(req) {
   }
 
   try {
-    // Intentar desde la base de datos global primero
-    const globalDb = getRedirectDb();
-    let dest = globalDb.get(slug);
-    
-    if (!dest) {
-      // Intentar desde la base de datos local
-      dest = redirectDb.get(slug);
-    }
+    // Intentar desde la base de datos local primero
+    let dest = simpleRedirectDb.get(slug);
     
     if (!dest) {
       // Intentar desde la base de datos ultra-simple
       try {
-        // Hacer una llamada interna a la API ultra-simple para obtener el enlace
         const ultraResponse = await fetch(`${new URL(req.url).origin}/api/ultra-simple`);
         if (ultraResponse.ok) {
           const ultraData = await ultraResponse.json();
           const linkData = ultraData.history.find(item => item.slug === slug);
           if (linkData) {
             dest = linkData.url;
+            simpleRedirectDb.set(slug, dest); // Cachear
             console.log('Found in ultra-simple DB:', slug, '->', dest);
           }
         }
@@ -57,8 +43,7 @@ export default async function handler(req) {
         const { kv } = await import('@vercel/kv');
         dest = await kv.get(`link:${slug}`);
         if (dest) {
-          globalDb.set(slug, dest); // Cachear en global
-          redirectDb.set(slug, dest); // Cachear en local
+          simpleRedirectDb.set(slug, dest); // Cachear
         }
       } catch (kvError) {
         console.warn('KV redirect failed:', kvError.message);
@@ -67,19 +52,10 @@ export default async function handler(req) {
 
     if (typeof dest === 'string' && dest.startsWith('http')) {
       console.log('Redirecting', slug, 'to', dest);
-      
-      // Incrementar contador de clicks si es posible
-      try {
-        const { incrementClicks } = await import('./database.js');
-        await incrementClicks(slug);
-      } catch (error) {
-        console.warn('Failed to increment clicks:', error.message);
-      }
-
       return Response.redirect(dest, 308);
     }
   } catch (error) {
-    console.error('Error in redirect handler:', error);
+    console.error('Error in simple redirect handler:', error);
   }
 
   return new Response('Not found', { status: 404 });

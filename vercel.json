@@ -9,7 +9,8 @@
     { "source": "/api/links", "destination": "/api/links" },
     { "source": "/api/history", "destination": "/api/history" },
     { "source": "/api/ultra-simple", "destination": "/api/ultra-simple" },
-    { "source": "/api/ultra-simple/(.*)", "destination": "/api/ultra-simple/$1" },
+    { "source": "/api/edit-simple/(.*)", "destination": "/api/edit-simple/$1" },
+    { "source": "/api/delete-simple/(.*)", "destination": "/api/delete-simple/$1" },
     { "source": "/api/simple-links", "destination": "/api/simple-links" },
     { "source": "/api/simple-history", "destination": "/api/simple-history" },
     { "source": "/api/edit/(.*)", "destination": "/api/edit/$1" },
@@ -18,6 +19,6 @@
     { "source": "/api/delete/(.*)", "destination": "/api/delete/$1" },
     { "source": "/api/test-kv", "destination": "/api/test-kv" },
     { "source": "/styles.css", "destination": "/api/styles" },
-    { "source": "/(.*)", "destination": "/api/redirect?slug=$1" }
+    { "source": "/(.*)", "destination": "/api/simple-redirect?slug=$1" }
   ]
 }

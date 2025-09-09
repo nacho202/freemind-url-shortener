@@ -403,7 +403,7 @@ export default async function handler(req) {
             if (!newUrl || newUrl === currentUrl) return;
 
             try {
-                const response = await fetch(\`/api/ultra-simple/\${slug}\`, {
+                const response = await fetch(\`/api/edit-simple/\${slug}\`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -429,7 +429,7 @@ export default async function handler(req) {
             if (!confirm('¿Estás seguro de que quieres eliminar este enlace?')) return;
 
             try {
-                const response = await fetch(\`/api/ultra-simple/\${slug}\`, {
+                const response = await fetch(\`/api/delete-simple/\${slug}\`, {
                     method: 'DELETE'
                 });
                 
