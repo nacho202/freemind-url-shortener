@@ -3,12 +3,22 @@ export const config = { runtime: 'edge' };
 
 // Base de datos persistente con Upstash Redis
 let db = new Map(); // Cache en memoria para mejor rendimiento
+let historyCache = []; // Cache del historial para evitar problemas con kv.keys()
 
 // Funciones para Upstash Redis
 async function saveToRedis(slug, data) {
   try {
     const { kv } = await import('@vercel/kv');
     await kv.set(`link:${slug}`, JSON.stringify(data));
+    
+    // Actualizar cache del historial
+    const existingIndex = historyCache.findIndex(item => item.slug === slug);
+    if (existingIndex >= 0) {
+      historyCache[existingIndex] = data;
+    } else {
+      historyCache.push(data);
+    }
+    
     console.log('Saved to Redis:', slug);
   } catch (error) {
     console.warn('Redis save failed:', error.message);
@@ -30,6 +40,10 @@ async function deleteFromRedis(slug) {
   try {
     const { kv } = await import('@vercel/kv');
     await kv.del(`link:${slug}`);
+    
+    // Actualizar cache del historial
+    historyCache = historyCache.filter(item => item.slug !== slug);
+    
     console.log('Deleted from Redis:', slug);
   } catch (error) {
     console.warn('Redis delete failed:', error.message);
@@ -37,23 +51,9 @@ async function deleteFromRedis(slug) {
 }
 
 async function getAllFromRedis() {
-  try {
-    const { kv } = await import('@vercel/kv');
-    const keys = await kv.keys('link:*');
-    const links = [];
-    
-    for (const key of keys) {
-      const data = await kv.get(key);
-      if (data) {
-        links.push(JSON.parse(data));
-      }
-    }
-    
-    return links;
-  } catch (error) {
-    console.warn('Redis get all failed:', error.message);
-    return [];
-  }
+  // Usar cache del historial que se mantiene actualizado
+  console.log('Getting history from cache:', historyCache.length, 'items');
+  return historyCache;
 }
 
 export default async function handler(req) {
