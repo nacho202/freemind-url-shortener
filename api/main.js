@@ -32,7 +32,9 @@ async function getFromRedis(slug) {
     console.log('Getting from Redis with key:', key);
     const data = await kv.get(key);
     console.log('Raw data from Redis:', data);
-    return data ? JSON.parse(data) : null;
+    
+    // Upstash Redis ya devuelve el objeto parseado, no necesitamos JSON.parse()
+    return data || null;
   } catch (error) {
     console.warn('Redis get failed:', error.message);
     return null;
