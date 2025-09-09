@@ -15,6 +15,18 @@ export default async function handler(req) {
   try {
     const dest = await kv.get(`link:${slug}`);
     if (typeof dest === 'string' && dest.startsWith('http')) {
+      // Incrementar contador de clicks
+      try {
+        const metadata = await kv.get(`meta:${slug}`);
+        if (metadata) {
+          const meta = JSON.parse(metadata);
+          meta.clicks = (meta.clicks || 0) + 1;
+          await kv.set(`meta:${slug}`, JSON.stringify(meta));
+        }
+      } catch (metaError) {
+        console.error('Error updating clicks:', metaError);
+      }
+      
       return Response.redirect(dest, 308);
     }
   } catch (error) {

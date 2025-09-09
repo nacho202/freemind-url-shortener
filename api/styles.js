@@ -138,6 +138,198 @@ export default async function handler(req) {
       font-size: 0.9rem;
     }
 
+    /* Historial */
+    .history-container {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-hover);
+      margin-top: 30px;
+    }
+
+    .history-container h2 {
+      color: var(--text-color);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-secondary {
+      background: var(--gradient-secondary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .history-item {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      background: #f8f9fa;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .history-item:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .history-info {
+      margin-bottom: 15px;
+    }
+
+    .history-url {
+      margin-bottom: 10px;
+    }
+
+    .history-url strong {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+
+    .history-original {
+      display: block;
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 5px;
+      word-break: break-all;
+    }
+
+    .history-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .history-stats span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-action.edit {
+      background: var(--warning-color);
+      color: white;
+    }
+
+    .btn-action.stats {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .btn-action.delete {
+      background: var(--error-color);
+      color: white;
+    }
+
+    /* Resultados */
+    .result-container {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .result {
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .result.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .result.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .result.loading {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    /* Modal de estadísticas */
+    .stats-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .stats-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow-hover);
+    }
+
+    .stats-content h3 {
+      color: var(--text-color);
+      margin-bottom: 20px;
+    }
+
+    .stats-info p {
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+
+    .no-data {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+      padding: 40px;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 15px;
@@ -147,8 +339,21 @@ export default async function handler(req) {
         font-size: 2rem;
       }
       
-      .shorten-container {
+      .shorten-container, .history-container {
         padding: 25px;
+      }
+
+      .history-actions {
+        flex-direction: column;
+      }
+
+      .btn-action {
+        justify-content: center;
+      }
+
+      .history-stats {
+        flex-direction: column;
+        gap: 10px;
       }
     }
   `;

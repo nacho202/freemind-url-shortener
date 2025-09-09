@@ -22,7 +22,13 @@ export default async function handler(req) {
   }
 
   const { slug, url, ttl } = body || {};
-  if (!slug || !url) return new Response('Missing slug or url', { status: 400 });
+  if (!url) return new Response('Missing url', { status: 400 });
+
+  // Generar slug automáticamente si no se proporciona
+  let finalSlug = slug;
+  if (!finalSlug) {
+    finalSlug = Math.random().toString(36).substring(2, 8);
+  }
 
   // Validar URL
   try {
@@ -32,18 +38,27 @@ export default async function handler(req) {
   }
 
   // Validar slug
-  if (!/^[a-zA-Z0-9-_]+$/.test(slug)) {
+  if (!/^[a-zA-Z0-9-_]+$/.test(finalSlug)) {
     return new Response('Invalid slug format', { status: 400 });
   }
 
   try {
-    const exists = await kv.get(`link:${slug}`);
+    const exists = await kv.get(`link:${finalSlug}`);
     if (exists) return new Response('Slug already exists', { status: 409 });
 
     const opts = ttl ? { ex: Number(ttl) } : undefined;
-    await kv.set(`link:${slug}`, url, opts);
+    await kv.set(`link:${finalSlug}`, url, opts);
 
-    return new Response(JSON.stringify({ ok: true, slug, url }), {
+    // Guardar metadatos del enlace
+    const metadata = {
+      originalUrl: url,
+      slug: finalSlug,
+      createdAt: new Date().toISOString(),
+      clicks: 0
+    };
+    await kv.set(`meta:${finalSlug}`, JSON.stringify(metadata), opts);
+
+    return new Response(JSON.stringify({ ok: true, slug: finalSlug, url }), {
       headers: { 'content-type': 'application/json' }
     });
   } catch (error) {
