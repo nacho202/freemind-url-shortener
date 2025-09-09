@@ -1,42 +1,42 @@
 // api/main.js - API principal simplificada y funcional
 export const config = { runtime: 'edge' };
 
-// Base de datos persistente con Vercel KV
+// Base de datos persistente con Upstash Redis
 let db = new Map(); // Cache en memoria para mejor rendimiento
 
-// Funciones para Vercel KV
-async function saveToKV(slug, data) {
+// Funciones para Upstash Redis
+async function saveToRedis(slug, data) {
   try {
     const { kv } = await import('@vercel/kv');
     await kv.set(`link:${slug}`, JSON.stringify(data));
-    console.log('Saved to KV:', slug);
+    console.log('Saved to Redis:', slug);
   } catch (error) {
-    console.warn('KV save failed:', error.message);
+    console.warn('Redis save failed:', error.message);
   }
 }
 
-async function getFromKV(slug) {
+async function getFromRedis(slug) {
   try {
     const { kv } = await import('@vercel/kv');
     const data = await kv.get(`link:${slug}`);
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    console.warn('KV get failed:', error.message);
+    console.warn('Redis get failed:', error.message);
     return null;
   }
 }
 
-async function deleteFromKV(slug) {
+async function deleteFromRedis(slug) {
   try {
     const { kv } = await import('@vercel/kv');
     await kv.del(`link:${slug}`);
-    console.log('Deleted from KV:', slug);
+    console.log('Deleted from Redis:', slug);
   } catch (error) {
-    console.warn('KV delete failed:', error.message);
+    console.warn('Redis delete failed:', error.message);
   }
 }
 
-async function getAllFromKV() {
+async function getAllFromRedis() {
   try {
     const { kv } = await import('@vercel/kv');
     const keys = await kv.keys('link:*');
@@ -51,7 +51,7 @@ async function getAllFromKV() {
     
     return links;
   } catch (error) {
-    console.warn('KV get all failed:', error.message);
+    console.warn('Redis get all failed:', error.message);
     return [];
   }
 }
@@ -105,8 +105,8 @@ async function handleAPI(req) {
       
       const finalSlug = customSlug || Math.random().toString(36).substring(2, 8);
       
-      // Verificar si existe en KV
-      const existingLink = await getFromKV(finalSlug);
+      // Verificar si existe en Redis
+      const existingLink = await getFromRedis(finalSlug);
       if (existingLink) {
         return new Response(JSON.stringify({ error: 'Slug already exists' }), {
           status: 409,
@@ -121,9 +121,9 @@ async function handleAPI(req) {
         clicks: 0
       };
       
-      // Guardar en memoria y en KV
+      // Guardar en memoria y en Redis
       db.set(finalSlug, linkData);
-      await saveToKV(finalSlug, linkData);
+      await saveToRedis(finalSlug, linkData);
       console.log('Created link:', finalSlug, '->', targetUrl);
       
       return new Response(JSON.stringify({
@@ -147,8 +147,8 @@ async function handleAPI(req) {
   if (req.method === 'GET') {
     // Obtener historial
     try {
-      // Obtener desde KV (persistente)
-      const history = await getAllFromKV();
+      // Obtener desde Redis (persistente)
+      const history = await getAllFromRedis();
       history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       return new Response(JSON.stringify({
@@ -180,8 +180,8 @@ async function handleAPI(req) {
         });
       }
       
-      // Obtener desde KV
-      const linkData = await getFromKV(slug);
+      // Obtener desde Redis
+      const linkData = await getFromRedis(slug);
       if (!linkData) {
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
@@ -192,7 +192,7 @@ async function handleAPI(req) {
       // Actualizar datos
       linkData.url = newUrl;
       db.set(slug, linkData);
-      await saveToKV(slug, linkData);
+      await saveToRedis(slug, linkData);
       
       console.log('Updated link:', slug, '->', newUrl);
       
@@ -215,8 +215,8 @@ async function handleAPI(req) {
   if (req.method === 'DELETE' && slug) {
     // Eliminar enlace
     try {
-      // Verificar si existe en KV
-      const linkData = await getFromKV(slug);
+      // Verificar si existe en Redis
+      const linkData = await getFromRedis(slug);
       if (!linkData) {
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
@@ -224,9 +224,9 @@ async function handleAPI(req) {
         });
       }
       
-      // Eliminar de memoria y KV
+      // Eliminar de memoria y Redis
       db.delete(slug);
-      await deleteFromKV(slug);
+      await deleteFromRedis(slug);
       console.log('Deleted link:', slug);
       
       return new Response(JSON.stringify({
@@ -257,9 +257,9 @@ async function handleRedirect(slug) {
   // Buscar en memoria primero (más rápido)
   let linkData = db.get(slug);
   
-  // Si no está en memoria, buscar en KV
+  // Si no está en memoria, buscar en Redis
   if (!linkData) {
-    linkData = await getFromKV(slug);
+    linkData = await getFromRedis(slug);
     if (linkData) {
       // Cargar en memoria para futuras consultas
       db.set(slug, linkData);
@@ -270,7 +270,7 @@ async function handleRedirect(slug) {
     // Incrementar clicks
     linkData.clicks = (linkData.clicks || 0) + 1;
     db.set(slug, linkData);
-    await saveToKV(slug, linkData);
+    await saveToRedis(slug, linkData);
     
     console.log('Redirecting', slug, 'to', linkData.url);
     return Response.redirect(linkData.url, 302);
