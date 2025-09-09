@@ -1,6 +1,6 @@
 # 🔗 Freemind Union - Acortador de URLs
 
-Un acortador de URLs moderno y elegante desarrollado para Freemind Union, usando Vercel Edge Functions y Upstash Redis.
+Un acortador de URLs moderno y elegante desarrollado para Freemind Union, usando Vercel Edge Functions y Vercel KV.
 
 ## ✨ Características
 
@@ -8,7 +8,7 @@ Un acortador de URLs moderno y elegante desarrollado para Freemind Union, usando
 - 🔗 **Acortar URLs** largas de forma rápida
 - 🏷️ **Slugs personalizados** para URLs memorables
 - ⚡ **Edge Functions** para máximo rendimiento
-- 🗄️ **Upstash Redis** para almacenamiento persistente
+- 🗄️ **Vercel KV** para almacenamiento persistente
 - ⏰ **TTL opcional** para URLs temporales
 - 📱 **Diseño responsivo** para móviles y desktop
 - 🔒 **Autenticación opcional** con token de administración
@@ -61,7 +61,7 @@ freemind-url-shortener/
 ## 🛠️ Tecnologías Utilizadas
 
 - **Backend**: Vercel Edge Functions
-- **Base de datos**: Upstash Redis
+- **Base de datos**: Vercel KV
 - **Frontend**: HTML5 + CSS3 + JavaScript Vanilla
 - **Despliegue**: Vercel
 - **Runtime**: Edge Runtime (máximo rendimiento)
@@ -86,20 +86,20 @@ El diseño está inspirado en la filosofía de Freemind Union:
 ### Acceder a un enlace
 - Simplemente visita `https://tudominio.com/slug` y serás redirigido automáticamente
 
-### Configuración de Upstash Redis
-1. Crea una cuenta en [Upstash](https://upstash.com)
-2. Crea una base de datos Redis
-3. Copia las credenciales a las variables de entorno de Vercel
+### Configuración de Vercel KV
+1. En Vercel, ve a tu proyecto
+2. Ve a "Storage" → "Create Database" → "KV"
+3. Las credenciales se configuran automáticamente
 
 ## 🔧 Configuración
 
 ### Variables de entorno
-- `UPSTASH_REDIS_REST_URL`: URL de tu base de datos Redis de Upstash
-- `UPSTASH_REDIS_REST_TOKEN`: Token de autenticación de Upstash
+- `KV_REST_API_URL`: Se configura automáticamente en Vercel
+- `KV_REST_API_TOKEN`: Se configura automáticamente en Vercel
 - `ADMIN_TOKEN`: Token opcional para autenticación (opcional)
 
 ### Base de datos
-- Usa Upstash Redis para almacenamiento persistente
+- Usa Vercel KV para almacenamiento persistente
 - Los enlaces se almacenan con la clave `link:slug`
 - Soporte para TTL (Time To Live) opcional
 
