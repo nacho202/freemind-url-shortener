@@ -30,9 +30,9 @@ export default async function handler(req) {
   console.log('Ultra simple handler called with method:', req.method);
   
   // Extraer slug de la URL si es PUT o DELETE
-  const url = new URL(req.url);
-  const pathParts = url.pathname.split('/');
-  const slug = pathParts[pathParts.length - 1];
+  const requestUrl = new URL(req.url);
+  const pathParts = requestUrl.pathname.split('/');
+  const urlSlug = pathParts[pathParts.length - 1];
   
   if (req.method === 'POST') {
     // Crear enlace
@@ -132,7 +132,7 @@ export default async function handler(req) {
         });
       }
       
-      if (!ultraDb.has(slug)) {
+      if (!ultraDb.has(urlSlug)) {
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
           headers: { 'content-type': 'application/json' }
@@ -140,14 +140,14 @@ export default async function handler(req) {
       }
       
       // Actualizar en la base de datos
-      const metadata = ultraDb.get(slug);
+      const metadata = ultraDb.get(urlSlug);
       metadata.url = newUrl;
-      ultraDb.set(slug, metadata);
+      ultraDb.set(urlSlug, metadata);
       
       // Sincronizar con el sistema de redirección
-      await syncWithRedirect(slug, newUrl);
+      await syncWithRedirect(urlSlug, newUrl);
       
-      console.log('Updated link:', slug, '->', newUrl);
+      console.log('Updated link:', urlSlug, '->', newUrl);
       
       return new Response(JSON.stringify({ 
         ok: true, 
@@ -168,7 +168,7 @@ export default async function handler(req) {
   if (req.method === 'DELETE') {
     // Eliminar enlace
     try {
-      if (!ultraDb.has(slug)) {
+      if (!ultraDb.has(urlSlug)) {
         return new Response(JSON.stringify({ error: 'Link not found' }), {
           status: 404,
           headers: { 'content-type': 'application/json' }
@@ -176,22 +176,22 @@ export default async function handler(req) {
       }
       
       // Eliminar de la base de datos
-      ultraDb.delete(slug);
+      ultraDb.delete(urlSlug);
       
       // Eliminar del sistema de redirección
       try {
         const redirectDb = global.redirectDb || new Map();
-        redirectDb.delete(slug);
+        redirectDb.delete(urlSlug);
         global.redirectDb = redirectDb;
         
         // También eliminar de Vercel KV
         const { kv } = await import('@vercel/kv');
-        await kv.del(`link:${slug}`);
+        await kv.del(`link:${urlSlug}`);
       } catch (error) {
         console.warn('Failed to remove from redirect system:', error.message);
       }
       
-      console.log('Deleted link:', slug);
+      console.log('Deleted link:', urlSlug);
       
       return new Response(JSON.stringify({ 
         ok: true, 
