@@ -4,16 +4,16 @@ export const config = { runtime: 'edge' };
 // Base de datos simple para redirecciones (debe ser la misma que ultra-simple-v2)
 let simpleRedirectDb = new Map();
 
-// Función para obtener datos de ultra-simple-v2
+// Función para obtener datos de ultra-simple-fixed
 async function getUltraSimpleData(origin) {
   try {
-    const response = await fetch(`${origin}/api/ultra-simple-v2`);
+    const response = await fetch(`${origin}/api/ultra-simple-fixed`);
     if (response.ok) {
       const data = await response.json();
       return data.history || [];
     }
   } catch (error) {
-    console.warn('Failed to fetch from ultra-simple-v2:', error.message);
+    console.warn('Failed to fetch from ultra-simple-fixed:', error.message);
   }
   return [];
 }
@@ -41,7 +41,7 @@ export default async function handler(req) {
       if (linkData) {
         dest = linkData.url;
         simpleRedirectDb.set(slug, dest); // Cachear para futuras consultas
-        console.log('Found in ultra-simple-v2 DB:', slug, '->', dest);
+        console.log('Found in ultra-simple-fixed DB:', slug, '->', dest);
       }
     }
 

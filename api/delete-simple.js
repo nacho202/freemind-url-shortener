@@ -19,8 +19,8 @@ export default async function handler(req) {
   console.log('Delete simple handler called with slug:', slug);
 
   try {
-    // Eliminar directamente de ultra-simple-v2 usando DELETE
-    const deleteResponse = await fetch(`${new URL(req.url).origin}/api/ultra-simple-v2/${slug}`, {
+    // Eliminar directamente de ultra-simple-fixed usando DELETE
+    const deleteResponse = await fetch(`${new URL(req.url).origin}/api/ultra-simple-fixed/${slug}`, {
       method: 'DELETE'
     });
 
