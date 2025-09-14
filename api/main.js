@@ -4,6 +4,7 @@ export const config = { runtime: 'edge' };
 // Base de datos persistente con Upstash Redis
 let db = new Map(); // Cache en memoria para mejor rendimiento
 let historyCache = []; // Cache del historial para evitar problemas con kv.keys()
+let isInitialized = false; // Flag para saber si ya se cargó el historial
 
 // Funciones para Upstash Redis
 async function saveToRedis(slug, data) {
@@ -55,8 +56,78 @@ async function deleteFromRedis(slug) {
   }
 }
 
+async function loadAllLinksFromRedis() {
+  if (isInitialized) {
+    return historyCache;
+  }
+  
+  console.log('Loading all links from Redis...');
+  
+  try {
+    const { kv } = await import('@vercel/kv');
+    
+    // Intentar usar kv.keys() si está disponible
+    try {
+      const keys = await kv.keys('link:*');
+      console.log('Found keys in Redis:', keys.length);
+      
+      const links = [];
+      for (const key of keys) {
+        try {
+          const data = await kv.get(key);
+          if (data) {
+            links.push(data);
+            // También cargar en el cache de memoria
+            db.set(data.slug, data);
+          }
+        } catch (keyError) {
+          console.warn('Failed to load key:', key, keyError.message);
+        }
+      }
+      
+      historyCache = links;
+      isInitialized = true;
+      console.log('Loaded', links.length, 'links from Redis');
+      return links;
+      
+    } catch (keysError) {
+      console.warn('kv.keys() not available, using alternative method:', keysError.message);
+      
+      // Método alternativo: intentar cargar enlaces conocidos
+      // Esto es menos eficiente pero funciona cuando kv.keys() no está disponible
+      const links = [];
+      const commonSlugs = ['test', 'demo', 'example', 'mi-test', 'mi-enlace'];
+      
+      for (const slug of commonSlugs) {
+        try {
+          const data = await kv.get(`link:${slug}`);
+          if (data) {
+            links.push(data);
+            db.set(data.slug, data);
+          }
+        } catch (e) {
+          // Ignorar errores de claves que no existen
+        }
+      }
+      
+      historyCache = links;
+      isInitialized = true;
+      console.log('Loaded', links.length, 'links using alternative method');
+      return links;
+    }
+    
+  } catch (error) {
+    console.warn('Failed to load links from Redis:', error.message);
+    historyCache = [];
+    isInitialized = true;
+    return [];
+  }
+}
+
 async function getAllFromRedis() {
-  // Usar cache del historial que se mantiene actualizado
+  // Cargar todos los enlaces si no se ha hecho antes
+  await loadAllLinksFromRedis();
+  
   console.log('Getting history from cache:', historyCache.length, 'items');
   return historyCache;
 }
